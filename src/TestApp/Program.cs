@@ -1,4 +1,5 @@
 using EventBus;
+using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +20,12 @@ builder.Services.AddMrEventBus(option =>
     option.Password = "admin";
 
     option.Producers = new[] { typeof(MyEvent) };
+    //option.Consumers = new [] { new Consumer() 
+    //{
+    //    ConsumerTypes=  new[] { typeof(MyEvent) },
+    //    ExchangeName="my_app",
+    //    QueueName="main"
+    //}};
 });
 
 var app = builder.Build();

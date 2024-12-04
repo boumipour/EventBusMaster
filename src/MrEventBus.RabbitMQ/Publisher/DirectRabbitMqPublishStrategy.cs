@@ -4,18 +4,18 @@ using Microsoft.Extensions.Options;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Publisher.Strategies;
 using MrEventBus.RabbitMQ.Configurations;
-using MrEventBus.RabbitMQ.Publisher;
+using MrEventBus.RabbitMQ.Infrastructures;
 using RabbitMQ.Client;
 
 namespace EventBus.Publisher.Strategies.RabbitMQ;
 
 public class DirectRabbitMqPublishStrategy : IPublishStrategy
 {
-    private readonly IRabbitMqPublisherConnectionManager _connectionManager;
+    private readonly IRabbitMqConnectionManager _connectionManager;
     private readonly RabbitMqConfiguration _config;
 
 
-    public DirectRabbitMqPublishStrategy(IRabbitMqPublisherConnectionManager connectionManager, IOptions<RabbitMqConfiguration> config)
+    public DirectRabbitMqPublishStrategy(IRabbitMqConnectionManager connectionManager, IOptions<RabbitMqConfiguration> config)
     {
         _connectionManager = connectionManager;
         _config = config.Value;

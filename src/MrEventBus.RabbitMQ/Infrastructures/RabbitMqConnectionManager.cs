@@ -1,20 +1,19 @@
 using Microsoft.Extensions.Options;
 using MrEventBus.RabbitMQ.Configurations;
-using MrEventBus.RabbitMQ.Publisher;
 using RabbitMQ.Client;
 
-namespace EventBus.Publisher.Strategies.RabbitMq;
+namespace MrEventBus.RabbitMQ.Infrastructures;
 
-public class RabbitMqPublisherConnectionManager : IRabbitMqPublisherConnectionManager
+public class RabbitMqConnectionManager : IRabbitMqConnectionManager
 {
     private readonly RabbitMqConfiguration _config = new();
     private readonly IConnection _connection;
     private readonly ThreadLocal<IChannel?> _threadLocalChannel;
 
-    public RabbitMqPublisherConnectionManager(IConnection connection,IOptions<RabbitMqConfiguration> options)
+    public RabbitMqConnectionManager(IConnection connection, IOptions<RabbitMqConfiguration> options)
     {
         _config = options.Value;
-        _connection=connection;
+        _connection = connection;
         _threadLocalChannel = new ThreadLocal<IChannel?>(() => null);
     }
 
@@ -23,7 +22,7 @@ public class RabbitMqPublisherConnectionManager : IRabbitMqPublisherConnectionMa
     {
         if (_threadLocalChannel.Value == null || !_threadLocalChannel.Value.IsOpen)
             _threadLocalChannel.Value = await _connection.CreateChannelAsync();
-        
+
         return _threadLocalChannel.Value!;
     }
 
