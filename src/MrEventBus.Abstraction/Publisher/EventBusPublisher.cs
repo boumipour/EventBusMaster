@@ -14,7 +14,7 @@ public class EventBusPublisher : IEventBusPublisher
         _publishStrategy = publishStrategy;
     }
 
-    public Task PublishAsync<T>(T message, string shard = "", string queueName = "") where T : class
+    public Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
     {
         var stopWatch = Stopwatch.StartNew();
 

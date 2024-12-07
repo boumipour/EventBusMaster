@@ -1,4 +1,5 @@
 using EventBus;
+using MrEventBus.Abstraction.Consumer;
 using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
@@ -12,7 +13,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddMrEventBus(option => 
 {
-    option.ExchangeName = "my_app";
+    option.ExchangeName = "test_app";
     option.HostName = "localhost";
     option.Port = 5672;
     option.VirtualHost = "/";
@@ -20,12 +21,12 @@ builder.Services.AddMrEventBus(option =>
     option.Password = "admin";
 
     option.Producers = new[] { typeof(MyEvent) };
-    //option.Consumers = new [] { new Consumer() 
-    //{
-    //    ConsumerTypes=  new[] { typeof(MyEvent) },
-    //    ExchangeName="my_app",
-    //    QueueName="main"
-    //}};
+    option.Consumers = new[] { new Consumer()
+    {
+        ConsumerTypes=  new[] { typeof(MyEvent) },
+        ExchangeName="test_app",
+        QueueName="main"
+    }};
 });
 
 var app = builder.Build();
@@ -42,3 +43,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+

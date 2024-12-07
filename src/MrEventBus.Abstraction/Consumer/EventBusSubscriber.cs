@@ -34,13 +34,12 @@ namespace MrEventBus.Abstraction.Consumer
             {
                 throw;
             }
-
         }
 
         private async Task SubscribeMessageAsync(string messageContextValue, Type messageType)
         {
 
-            //var messageContext = messageContextValue;
+            var messageContext = messageContextValue;
             //var consumer = _serviceProvider.GetService<IEventConsumer<Event>>();
             //{
             //    {

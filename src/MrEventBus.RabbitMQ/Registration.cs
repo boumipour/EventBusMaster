@@ -1,9 +1,13 @@
 using EventBus.Publisher;
 using EventBus.Publisher.Strategies.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
+using MrEventBus.Abstraction.Consumer;
+using MrEventBus.Abstraction.Consumer.Strategies;
+using MrEventBus.Abstraction.Consumer.Workers;
 using MrEventBus.Abstraction.Publisher;
 using MrEventBus.Abstraction.Publisher.Strategies;
 using MrEventBus.RabbitMQ.Configurations;
+using MrEventBus.RabbitMQ.Consumer;
 using MrEventBus.RabbitMQ.Infrastructures;
 using RabbitMQ.Client;
 
@@ -31,12 +35,9 @@ public static class Registration
         var connection = connectionFactory.CreateConnectionAsync().GetAwaiter().GetResult();
         var channel = connection.CreateChannelAsync().GetAwaiter().GetResult();
 
+        
         services.AddSingleton<IConnection>(provider => { return connection; });
-
-        services.AddScoped<IEventBusPublisher, EventBusPublisher>();
-        services.AddScoped<IPublishStrategy, DirectRabbitMqPublishStrategy>();
         services.AddScoped<IRabbitMqConnectionManager, RabbitMqConnectionManager>();
-
 
 
         if (config.Producers.Any())
@@ -47,6 +48,9 @@ public static class Registration
             channel.ExchangeDeclareAsync(exchange: defaultExchangeName, type: ExchangeType.Direct).GetAwaiter().GetResult();
             channel.QueueDeclareAsync(defaultQname, false, false, false).GetAwaiter().GetResult();
             channel.QueueBindAsync(defaultQname, defaultExchangeName, "main").GetAwaiter().GetResult();
+
+            services.AddScoped<IEventBusPublisher, EventBusPublisher>();
+            services.AddScoped<IPublishStrategy, DirectRabbitMqPublishStrategy>();
         }
 
         if (config.Consumers.Any())
@@ -56,6 +60,11 @@ public static class Registration
                 channel.QueueDeclareAsync($"{consumer.ExchangeName}.{consumer.QueueName}", false,false,false).GetAwaiter().GetResult();
                 channel.QueueBindAsync($"{consumer.ExchangeName}.{consumer.QueueName}", consumer.ExchangeName, consumer.QueueName).GetAwaiter().GetResult();
             }
+
+            services.AddScoped<IEventBusSubscriber, EventBusSubscriber>();
+            services.AddScoped<ISubscribeStrategy, DirectRabbitMqSubsciberStrategy>();
+            
+            services.AddHostedService<SubscribeWorker>();
         }
 
         return services;

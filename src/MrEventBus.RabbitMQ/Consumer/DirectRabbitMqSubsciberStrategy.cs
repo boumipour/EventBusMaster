@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using MrEventBus.Abstraction.Consumer.Strategies;
 using MrEventBus.RabbitMQ.Configurations;
 using MrEventBus.RabbitMQ.Infrastructures;
@@ -21,32 +22,45 @@ namespace MrEventBus.RabbitMQ.Consumer
 
         public async Task SubscribeAsync(Func<string, Type, Task> messageRecieved, CancellationToken cancellationToken = default)
         {
-            IEnumerable<string> exchanges = _config.Consumers.Select(s => s.ExchangeName.ToLower(System.Globalization.CultureInfo.CurrentCulture)).ToList();
-            if (!exchanges.Any())
+            if (!_config.Consumers.Any())
             {
                 return;
             }
 
-            var channel =await _connectionManager.GetChannelAsync();
+            // Start consuming
+            foreach (var consumer in _config.Consumers)
+            {
+                var channel = await _connectionManager.GetChannelAsync();
+                var listener = CreateListener(channel, messageRecieved);
 
+                await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: true, consumer: listener);
+            }
+        }
+
+        private AsyncEventingBasicConsumer CreateListener(IChannel channel, Func<string, Type, Task> messageRecieved, CancellationToken cancellationToken = default)
+        {
             var listener = new AsyncEventingBasicConsumer(channel);
-
-            listener.ReceivedAsync += (model, ea) =>
+            listener.ReceivedAsync += async (model, ea) =>
             {
                 byte[] body = ea.Body.ToArray();
                 var message = Encoding.UTF8.GetString(body);
 
-                return Task.CompletedTask;
+                await messageRecieved!.Invoke(message, typeof(DirectRabbitMqSubsciberStrategy)).ContinueWith(action =>
+                {
+                    if (action.IsCompletedSuccessfully)
+                    {
+                        //act
+                    }
+                    else
+                    {
+                        throw action.Exception??new Exception("action was failed");
+                    }
+                }, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
+
+
             };
 
-
-            // Start consuming
-            foreach (var consumer in _config.Consumers)
-            {
-                await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: true, consumer: listener);
-            }
-           
-
+            return listener;
         }
     }
 }
