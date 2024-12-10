@@ -1,15 +1,14 @@
 using MrEventBus.Abstraction.Models;
-using MrEventBus.Abstraction.Publisher;
-using MrEventBus.Abstraction.Publisher.Strategies;
+using MrEventBus.Abstraction.Producer.Strategies;
 using System.Diagnostics;
 
-namespace EventBus.Publisher;
+namespace MrEventBus.Abstraction.Producer;
 
-public class EventBusPublisher : IEventBusPublisher
+public class EventBusProducer : IEventBusProducer
 {
-    private readonly IPublishStrategy _publishStrategy;
+    private readonly IProduceStrategy _publishStrategy;
 
-    public EventBusPublisher(IPublishStrategy publishStrategy)
+    public EventBusProducer(IProduceStrategy publishStrategy)
     {
         _publishStrategy = publishStrategy;
     }
@@ -36,7 +35,7 @@ public class EventBusPublisher : IEventBusPublisher
         }
         catch (Exception)
         {
-          
+
             throw;
         }
     }

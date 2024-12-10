@@ -1,14 +1,13 @@
-using EventBus.Publisher;
-using EventBus.Publisher.Strategies.RabbitMQ;
 using Microsoft.Extensions.DependencyInjection;
-using MrEventBus.Abstraction.Consumer;
-using MrEventBus.Abstraction.Consumer.Strategies;
-using MrEventBus.Abstraction.Consumer.Workers;
-using MrEventBus.Abstraction.Publisher;
-using MrEventBus.Abstraction.Publisher.Strategies;
+using MrEventBus.Abstraction.Producer;
+using MrEventBus.Abstraction.Producer.Strategies;
+using MrEventBus.Abstraction.Subscriber;
+using MrEventBus.Abstraction.Subscriber.Strategies;
+using MrEventBus.Abstraction.Subscriber.Workers;
 using MrEventBus.RabbitMQ.Configurations;
-using MrEventBus.RabbitMQ.Consumer;
 using MrEventBus.RabbitMQ.Infrastructures;
+using MrEventBus.RabbitMQ.Producer;
+using MrEventBus.RabbitMQ.Subscriber;
 using RabbitMQ.Client;
 
 namespace EventBus;
@@ -49,8 +48,8 @@ public static class Registration
             channel.QueueDeclareAsync(defaultQname, false, false, false).GetAwaiter().GetResult();
             channel.QueueBindAsync(defaultQname, defaultExchangeName, "main").GetAwaiter().GetResult();
 
-            services.AddScoped<IEventBusPublisher, EventBusPublisher>();
-            services.AddScoped<IPublishStrategy, DirectRabbitMqPublishStrategy>();
+            services.AddScoped<IEventBusProducer, EventBusProducer>();
+            services.AddScoped<IProduceStrategy, DirectRabbitMqProduceStrategy>();
         }
 
         if (config.Consumers.Any())

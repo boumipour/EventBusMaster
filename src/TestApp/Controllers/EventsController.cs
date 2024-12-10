@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using MrEventBus.Abstraction.Publisher;
+using MrEventBus.Abstraction.Producer;
 
 namespace TestApp.Controllers
 {
@@ -8,9 +8,9 @@ namespace TestApp.Controllers
     public class EventsController : ControllerBase
     {
         private readonly ILogger<EventsController> _logger;
-        private readonly IEventBusPublisher _publisher;
+        private readonly IEventBusProducer _publisher;
 
-        public EventsController(IEventBusPublisher publisher,ILogger<EventsController> logger)
+        public EventsController(IEventBusProducer publisher,ILogger<EventsController> logger)
         {
             _logger = logger;
             _publisher = publisher;

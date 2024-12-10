@@ -1,8 +1,8 @@
-﻿using System.Diagnostics;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Diagnostics;
 
-namespace MrEventBus.Abstraction.Consumer.Workers
+namespace MrEventBus.Abstraction.Subscriber.Workers
 {
     public sealed class SubscribeWorker : BackgroundService
     {
@@ -38,7 +38,7 @@ namespace MrEventBus.Abstraction.Consumer.Workers
                         Console.WriteLine("Subscribed");
                     }
                 }
-            }, stoppingToken, TaskCreationOptions.None, TaskScheduler.Default);
+            }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
     }
 }

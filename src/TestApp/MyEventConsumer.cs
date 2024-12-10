@@ -1,9 +1,9 @@
-﻿using MrEventBus.Abstraction.Consumer;
-using MrEventBus.Abstraction.Models;
+﻿using MrEventBus.Abstraction.Models;
+using MrEventBus.Abstraction.Subscriber;
 
 namespace TestApp
 {
-    public class MyEventConsumer : IEventConsumer<MyEventConsumer>
+    public class MyEventConsumer : IMessageConsumer<MyEventConsumer>
     {
         public Task ConsumeAsync(MessageContext<MyEventConsumer> messeageContext)
         {

@@ -17,7 +17,7 @@ public class RabbitMqConfiguration
 
 public class Consumer
 {
-    public string ExchangeName { get; set; }
-    public string QueueName { get; set; }
+    public required string ExchangeName { get; set; }
+    public required string QueueName { get; set; }
     public IReadOnlyCollection<Type> ConsumerTypes { get; set; } = new List<Type>();
 }

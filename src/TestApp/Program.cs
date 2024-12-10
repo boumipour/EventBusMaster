@@ -1,5 +1,4 @@
 using EventBus;
-using MrEventBus.Abstraction.Consumer;
 using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
