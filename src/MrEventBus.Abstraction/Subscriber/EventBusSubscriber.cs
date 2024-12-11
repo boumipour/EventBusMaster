@@ -1,5 +1,4 @@
-﻿using MrEventBus.Abstraction.Models;
-using MrEventBus.Abstraction.Subscriber.Strategies;
+﻿using MrEventBus.Abstraction.Subscriber.Strategies;
 using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;
@@ -24,14 +23,14 @@ public class EventBusSubscriber : IEventBusSubscriber
     {
         try
         {
-            var messageContextGenericType = typeof(MessageContext<>).MakeGenericType(messageType);
-            var deserializedMessageContext = JsonSerializer.Deserialize(messageContextValue, messageContextGenericType);
+            var types = ConsumerMessageRegistry.GetMessageRelatedType(messageType);
+
+            var deserializedMessageContext = JsonSerializer.Deserialize(messageContextValue, types.MessageContextType);
+            var consumer = _serviceProvider.GetService(types.ConsumerType);
 
 
-            var consumerType = typeof(IMessageConsumer<>).MakeGenericType(messageType);
-            var consumer = _serviceProvider.GetService(consumerType);
-            var consumeMethod = consumerType.GetMethod("ConsumeAsync");
-
+            //todo: fix
+            var consumeMethod = types.Item2.GetMethod("ConsumeAsync");
 
             await (Task)consumeMethod?.Invoke(consumer, new[] { deserializedMessageContext });
 

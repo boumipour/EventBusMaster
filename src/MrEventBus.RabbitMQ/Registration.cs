@@ -56,6 +56,11 @@ public static class Registration
         {
             foreach (var consumer in config.Consumers) 
             {
+                foreach (var consumerType in consumer.ConsumerTypes)
+                {
+                    ConsumerMessageRegistry.RegisterMessageType(consumerType);
+                }
+
                 channel.QueueDeclareAsync($"{consumer.ExchangeName}.{consumer.QueueName}", false,false,false).GetAwaiter().GetResult();
                 channel.QueueBindAsync($"{consumer.ExchangeName}.{consumer.QueueName}", consumer.ExchangeName, consumer.QueueName).GetAwaiter().GetResult();
             }
