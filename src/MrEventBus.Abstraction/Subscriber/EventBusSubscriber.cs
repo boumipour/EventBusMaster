@@ -1,4 +1,5 @@
-﻿using MrEventBus.Abstraction.Subscriber.Strategies;
+﻿using MrEventBus.Abstraction.Models;
+using MrEventBus.Abstraction.Subscriber.Strategies;
 using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;
@@ -30,9 +31,13 @@ public class EventBusSubscriber : IEventBusSubscriber
 
 
             //todo: fix
-            var consumeMethod = types.Item2.GetMethod("ConsumeAsync");
+            //var consumeMethod = types.ConsumerType.GetMethod("ConsumeAsync");
+            var consumeMethod = types.ConsumerType.GetMethod("ConsumeAsync", new[] { types.MessageContextType });
 
-            await (Task)consumeMethod?.Invoke(consumer, new[] { deserializedMessageContext });
+            Task? task = consumeMethod?.Invoke(consumer, new[] { deserializedMessageContext }) as Task;
+
+            if (task != null)
+                await task;
 
         }
         catch (Exception)
