@@ -1,4 +1,5 @@
 using EventBus;
+using MrEventBus.Abstraction.Subscriber;
 using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
@@ -27,6 +28,9 @@ builder.Services.AddMrEventBus(option =>
         QueueName="main"
     }};
 });
+
+
+builder.Services.AddScoped<IMessageConsumer<MyEvent>, MyEventConsumer>();
 
 var app = builder.Build();
 

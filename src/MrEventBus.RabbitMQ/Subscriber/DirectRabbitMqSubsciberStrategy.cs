@@ -22,41 +22,71 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
     public async Task SubscribeAsync(Func<string, Type, Task> messageRecieved, CancellationToken cancellationToken = default)
     {
         if (!_config.Consumers.Any())
-        {
             return;
-        }
 
-        // Start consuming
         foreach (var consumer in _config.Consumers)
         {
-            var channel = await _connectionManager.GetChannelAsync();
-            var listener = CreateListener(channel, messageRecieved);
+            var semaphore = new SemaphoreSlim(consumer.ConcurrencyLevel);
 
-            await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: true, consumer: listener);
+            for (int i = 0; i < consumer.ConcurrencyLevel; i++)
+            {
+                var channel = await _connectionManager.GetChannelAsync();
+                await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: consumer.PrefetchCount, global: false);
+
+                var listener = CreateListener(channel, messageRecieved, semaphore, cancellationToken);
+
+                await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: false, consumer: listener);
+            }
+
+            // Dispose semaphore when no longer needed
+            cancellationToken.Register(() => semaphore.Dispose());
         }
     }
 
-    private AsyncEventingBasicConsumer CreateListener(IChannel channel, Func<string, Type, Task> messageRecieved, CancellationToken cancellationToken = default)
+    private AsyncEventingBasicConsumer CreateListener(IChannel channel, Func<string, Type, Task> messageRecieved, SemaphoreSlim semaphore, CancellationToken cancellationToken = default)
     {
         var listener = new AsyncEventingBasicConsumer(channel);
         listener.ReceivedAsync += async (model, ea) =>
         {
-            byte[] body = ea.Body.ToArray();
-            var message = Encoding.UTF8.GetString(body);
-
-            await messageRecieved!.Invoke(message, typeof(DirectRabbitMqSubsciberStrategy)).ContinueWith(action =>
+            if (cancellationToken.IsCancellationRequested)
             {
-                if (action.IsCompletedSuccessfully)
-                {
-                    //act
-                }
-                else
-                {
-                    throw action.Exception ?? new Exception("action was failed");
-                }
-            }, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default);
+                Console.WriteLine("Cancellation requested. Stopping consumer.");
+                return;
+            }
+
+            await semaphore.WaitAsync(cancellationToken);
+
+            try
+            {
+                byte[] body = ea.Body.ToArray();
+                var message = Encoding.UTF8.GetString(body);
+
+                object? messageTypeNameRaw = string.Empty;
+                ea.BasicProperties?.Headers?.TryGetValue("messageKey", out messageTypeNameRaw);
 
 
+                var messageTypeName = Encoding.UTF8.GetString((messageTypeNameRaw as byte[]) ?? new byte[] { });
+
+                var messageType = Type.GetType(messageTypeName);
+                if (messageType == null)
+                {
+                    Console.WriteLine("can't find message type in consumer side");
+                    return;
+                }
+
+                await messageRecieved(message, messageType);
+
+                await channel.BasicAckAsync(ea.DeliveryTag, false);
+            }
+            catch
+            {
+                await channel.BasicNackAsync(ea.DeliveryTag, false, true);
+
+            }
+            finally
+            {
+                semaphore.Release();
+            }
         };
 
         return listener;

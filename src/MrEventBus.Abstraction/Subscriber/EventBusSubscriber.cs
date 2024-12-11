@@ -1,5 +1,6 @@
-﻿using MrEventBus.Abstraction.Subscriber.Strategies;
-using System.Diagnostics;
+﻿using MrEventBus.Abstraction.Models;
+using MrEventBus.Abstraction.Subscriber.Strategies;
+using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;
 
@@ -16,37 +17,29 @@ public class EventBusSubscriber : IEventBusSubscriber
 
     public Task SubscribeAsync(CancellationToken cancellationToken = default)
     {
-        return _strategy.SubscribeAsync(MessageReceivedAsync, cancellationToken);
+        return _strategy.SubscribeAsync(ConsumeMessageAsync, cancellationToken);
     }
 
-    private async Task MessageReceivedAsync(string MessageContextValue, Type messageType)
+    private async Task ConsumeMessageAsync(string messageContextValue, Type messageType)
     {
-        var stopWatch = Stopwatch.StartNew();
-
         try
         {
-            await SubscribeMessageAsync(MessageContextValue, messageType);
+            var messageContextGenericType = typeof(MessageContext<>).MakeGenericType(messageType);
+            var deserializedMessageContext = JsonSerializer.Deserialize(messageContextValue, messageContextGenericType);
+
+
+            var consumerType = typeof(IMessageConsumer<>).MakeGenericType(messageType);
+            var consumer = _serviceProvider.GetService(consumerType);
+            var consumeMethod = consumerType.GetMethod("ConsumeAsync");
+
+
+            await (Task)consumeMethod?.Invoke(consumer, new[] { deserializedMessageContext });
+
         }
         catch (Exception)
         {
             throw;
         }
-    }
-
-    private async Task SubscribeMessageAsync(string messageContextValue, Type messageType)
-    {
-
-        var messageContext = messageContextValue;
-        //var consumer = _serviceProvider.GetService<IEventConsumer<Event>>();
-        //{
-        //    {
-        //        return;
-        //    }
-        //}
-
-        //await consumer.ConsumeAsync(messageContext);
-
-        await Task.CompletedTask;
     }
 
 }

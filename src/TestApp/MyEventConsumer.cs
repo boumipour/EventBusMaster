@@ -3,9 +3,14 @@ using MrEventBus.Abstraction.Subscriber;
 
 namespace TestApp
 {
-    public class MyEventConsumer : IMessageConsumer<MyEventConsumer>
+    public class MyEventConsumer : IMessageConsumer<MyEvent>
     {
-        public Task ConsumeAsync(MessageContext<MyEventConsumer> messeageContext)
+        public MyEventConsumer()
+        {
+            
+        }
+
+        public Task ConsumeAsync(MessageContext<MyEvent> messeageContext)
         {
             Console.WriteLine( messeageContext.Message);
             return Task.CompletedTask;

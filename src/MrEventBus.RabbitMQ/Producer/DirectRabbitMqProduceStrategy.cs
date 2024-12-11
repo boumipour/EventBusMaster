@@ -1,6 +1,4 @@
-using System.Text;
 using System.Text.Json;
-using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Strategies;
@@ -26,31 +24,22 @@ public class DirectRabbitMqProduceStrategy : IProduceStrategy
     {
         using var channel = await _connectionManager.GetChannelAsync();
 
-
-        //string EventData = JsonSerializer.Serialize(messageContext);
-        //add message key as param
-
         string messageKey = messageContext?.Message?.GetType().FullName + ", " + messageContext?.Message?.GetType().Assembly.GetName();
 
-
-
-        var message = JsonSerializer.SerializeToUtf8Bytes(messageContext, typeof(T));
-
+        var message = JsonSerializer.SerializeToUtf8Bytes(messageContext, typeof(MessageContext<T>));
 
         // Set the message properties
-        BasicProperties properties = new()
+        BasicProperties customProperties = new()
         {
             Persistent = true,
-            Headers = new Dictionary<string, object>
+            Headers = new Dictionary<string, object?>
             {
                 { "messageKey", messageKey }
             }
 
         };
 
-
-        await channel.BasicPublishAsync(exchange: _config.ExchangeName, routingKey: queueName, body: message, cancellationToken: cancellationToken);
-
+        await channel.BasicPublishAsync(_config.ExchangeName, queueName, false, customProperties, message, cancellationToken);
     }
 
 }

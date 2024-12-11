@@ -19,5 +19,7 @@ public class Consumer
 {
     public required string ExchangeName { get; set; }
     public required string QueueName { get; set; }
+    public int ConcurrencyLevel { get; set; } = 1;
+    public ushort PrefetchCount { get; set; } = 1;
     public IReadOnlyCollection<Type> ConsumerTypes { get; set; } = new List<Type>();
 }
