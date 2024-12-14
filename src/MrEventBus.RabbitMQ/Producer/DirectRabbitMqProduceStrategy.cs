@@ -10,11 +10,11 @@ namespace MrEventBus.RabbitMQ.Producer;
 
 public class DirectRabbitMqProduceStrategy : IProduceStrategy
 {
-    private readonly IRabbitMqConnectionManager _connectionManager;
+    private readonly IRabbitMqChannelManager _connectionManager;
     private readonly RabbitMqConfiguration _config;
 
 
-    public DirectRabbitMqProduceStrategy(IRabbitMqConnectionManager connectionManager, IOptions<RabbitMqConfiguration> config)
+    public DirectRabbitMqProduceStrategy(IRabbitMqChannelManager connectionManager, IOptions<RabbitMqConfiguration> config)
     {
         _connectionManager = connectionManager;
         _config = config.Value;

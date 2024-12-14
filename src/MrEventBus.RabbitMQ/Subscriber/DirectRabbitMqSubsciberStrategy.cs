@@ -10,12 +10,12 @@ namespace MrEventBus.RabbitMQ.Subscriber;
 
 public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
 {
-    private readonly IRabbitMqConnectionManager _connectionManager;
+    private readonly IRabbitMqChannelManager _connectionManager;
     private readonly RabbitMqConfiguration _config;
 
     private bool _isSubscribed = false;
 
-    public DirectRabbitMqSubsciberStrategy(IRabbitMqConnectionManager connectionManager, IOptions<RabbitMqConfiguration> config)
+    public DirectRabbitMqSubsciberStrategy(IRabbitMqChannelManager connectionManager, IOptions<RabbitMqConfiguration> config)
     {
         _connectionManager = connectionManager;
         _config = config.Value;
@@ -36,19 +36,35 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
             for (int i = 0; i < consumer.ConcurrencyLevel; i++)
             {
                 var channel = await _connectionManager.GetChannelAsync();
-                await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: consumer.PrefetchCount, global: false);
+                try
+                {
+                    await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: consumer.PrefetchCount, global: false);
 
-                var listener = CreateListener(channel, messageRecieved, semaphore, cancellationToken);
+                    var listener = CreateListener(channel, messageRecieved, semaphore, cancellationToken);
 
-                await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: false, consumer: listener);
+                    await channel.BasicConsumeAsync(queue: $"{consumer.ExchangeName}.{consumer.QueueName}", autoAck: false, consumer: listener);
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine($"Error setting up consumer: {ex.Message}");
+                    // Release channel in case of error
+                    _connectionManager.ReleaseChannel(channel);
+                    throw;
+                }
+
+                // Dispose semaphore when no longer needed
+                // Register cancellation to clean up resources
+                cancellationToken.Register(() =>
+                {
+                    _connectionManager.ReleaseChannel(channel);
+                    semaphore.Dispose();
+                });
             }
-
-            // Dispose semaphore when no longer needed
-            cancellationToken.Register(() => semaphore.Dispose());
         }
     }
 
-    private AsyncEventingBasicConsumer CreateListener(IChannel channel, Func<string, Type, Task> messageRecieved, SemaphoreSlim semaphore, CancellationToken cancellationToken = default)
+    private static AsyncEventingBasicConsumer CreateListener(IChannel channel, Func<string, Type, Task> messageRecieved, SemaphoreSlim semaphore, CancellationToken cancellationToken = default)
     {
         var listener = new AsyncEventingBasicConsumer(channel);
         listener.ReceivedAsync += async (model, ea) =>
@@ -60,7 +76,6 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
             }
 
             await semaphore.WaitAsync(cancellationToken);
-
             try
             {
                 byte[] body = ea.Body.ToArray();

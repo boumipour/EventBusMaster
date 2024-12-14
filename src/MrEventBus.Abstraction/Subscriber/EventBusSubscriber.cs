@@ -1,5 +1,4 @@
-﻿using MrEventBus.Abstraction.Models;
-using MrEventBus.Abstraction.Subscriber.Strategies;
+﻿using MrEventBus.Abstraction.Subscriber.Strategies;
 using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;

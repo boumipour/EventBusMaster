@@ -36,7 +36,7 @@ public static class Registration
 
         
         services.AddSingleton<IConnection>(provider => { return connection; });
-        services.AddScoped<IRabbitMqConnectionManager, RabbitMqConnectionManager>();
+        services.AddScoped<IRabbitMqChannelManager, RabbitMqChannelManager>();
 
 
         if (config.Producers.Any())
