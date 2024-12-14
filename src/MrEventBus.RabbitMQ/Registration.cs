@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.ObjectPool;
 using MrEventBus.Abstraction.Producer;
 using MrEventBus.Abstraction.Producer.Strategies;
 using MrEventBus.Abstraction.Subscriber;
@@ -36,8 +37,7 @@ public static class Registration
 
         
         services.AddSingleton<IConnection>(provider => { return connection; });
-        services.AddScoped<IRabbitMqChannelManager, RabbitMqChannelManager>();
-
+        services.AddSingleton<IRabbitMqChannelManager, RabbitMqChannelManager>();
 
         if (config.Producers.Any())
         {
