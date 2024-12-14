@@ -13,6 +13,8 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
     private readonly IRabbitMqConnectionManager _connectionManager;
     private readonly RabbitMqConfiguration _config;
 
+    private bool _isSubscribed = false;
+
     public DirectRabbitMqSubsciberStrategy(IRabbitMqConnectionManager connectionManager, IOptions<RabbitMqConfiguration> config)
     {
         _connectionManager = connectionManager;
@@ -21,6 +23,9 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
 
     public async Task SubscribeAsync(Func<string, Type, Task> messageRecieved, CancellationToken cancellationToken = default)
     {
+        if (_isSubscribed) return;
+        _isSubscribed = true;
+
         if (!_config.Consumers.Any())
             return;
 

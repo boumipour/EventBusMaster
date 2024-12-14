@@ -18,6 +18,7 @@ namespace MrEventBus.Abstraction.Subscriber.Workers
             return Task.Factory.StartNew(async () =>
             {
                 using var scope = _serviceProvider.CreateScope();
+                var subscriber = scope.ServiceProvider.GetRequiredService<IEventBusSubscriber>();
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -25,7 +26,6 @@ namespace MrEventBus.Abstraction.Subscriber.Workers
 
                     try
                     {
-                        var subscriber = scope.ServiceProvider.GetRequiredService<IEventBusSubscriber>();
                         await subscriber.SubscribeAsync(stoppingToken);
                     }
                     catch (Exception exception)
@@ -36,6 +36,7 @@ namespace MrEventBus.Abstraction.Subscriber.Workers
                     finally
                     {
                         Console.WriteLine("Subscribed");
+                        await Task.Delay(Timeout.Infinite, stoppingToken);
                     }
                 }
             }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
