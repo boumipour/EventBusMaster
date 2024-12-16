@@ -1,4 +1,6 @@
-﻿using MrEventBus.Abstraction.Subscriber.Strategies;
+﻿using Microsoft.Extensions.DependencyInjection;
+using MrEventBus.Abstraction.Subscriber.Strategies;
+using System;
 using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;
@@ -26,7 +28,9 @@ public class EventBusSubscriber : IEventBusSubscriber
             var types = ConsumerMessageRegistry.GetMessageRelatedType(messageType);
 
             var deserializedMessageContext = JsonSerializer.Deserialize(messageContextValue, types.MessageContextType);
-            var consumer = _serviceProvider.GetService(types.ConsumerType);
+
+            using var scope = _serviceProvider.CreateScope();
+            var consumer = scope.ServiceProvider.GetService(types.ConsumerType);
 
 
             //todo: fix

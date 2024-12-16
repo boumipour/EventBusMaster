@@ -29,12 +29,13 @@ public class RabbitMqChannelManager : IRabbitMqChannelManager
 
     public async ValueTask<IChannel> GetChannelAsync(string queueName)
     {
-        if (!channelPools.TryGetValue(queueName, out var pool))
-        {
-            pool = await InitializePoolAsync(queueName, _config.PoolSizePerQueue);
-            channelPools.TryAdd(queueName, pool);
-        }
+        if (!channelPools.ContainsKey(queueName))
+            await InitializePoolAsync(queueName, _config.PoolSizePerQueue);
+        
 
+        if (!channelPools.TryGetValue(queueName, out var pool))
+            throw new Exception($"Queue {queueName} has no initialized channel pool.");
+        
         int poolSize = pool.Count;
 
         // round robin
@@ -60,17 +61,30 @@ public class RabbitMqChannelManager : IRabbitMqChannelManager
         return channel;
     }
 
-    private async Task<List<IChannel>> InitializePoolAsync(string queueName, int poolSize)
+    private async Task InitializePoolAsync(string queueName, int poolSize)
     {
-        var pool = new List<IChannel>();
+        var lockForQueue = initializationLocks.GetOrAdd(queueName, _ => new SemaphoreSlim(1, 1));
+        await lockForQueue.WaitAsync();
 
-        for (int i = 0; i < poolSize; i++)
+        try
         {
-            var channel = await _connection.CreateChannelAsync();
-            pool.Add(channel);
-        }
+            if (!channelPools.ContainsKey(queueName))
+            {
+                var pool = new List<IChannel>();
 
-        return pool;
+                for (int i = 0; i < poolSize; i++)
+                {
+                    var channel = await _connection.CreateChannelAsync();
+                    pool.Add(channel);
+                }
+
+                channelPools.TryAdd(queueName, pool);
+            }
+        }
+        finally
+        {
+            lockForQueue.Release();
+        }
     }
 
     private bool IsChannelHealthy(IChannel channel)
