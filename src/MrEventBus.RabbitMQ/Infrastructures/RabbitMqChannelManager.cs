@@ -3,14 +3,16 @@ using MrEventBus.RabbitMQ.Configurations;
 using RabbitMQ.Client;
 using System.Collections.Concurrent;
 
-
 namespace MrEventBus.RabbitMQ.Infrastructures;
 
-public class RabbitMqChannelManager : IRabbitMqChannelManager, IDisposable
+public class RabbitMqChannelManager : IRabbitMqChannelManager
 {
     private readonly RabbitMqConfiguration _config;
     private readonly IConnection _connection;
-    private readonly ConcurrentBag<IChannel> _channelPool;
+
+    private readonly ConcurrentDictionary<string, List<IChannel>> channelPools;
+    private readonly ConcurrentDictionary<string, int> queueIndex;
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> initializationLocks;
 
     private bool _disposed;
 
@@ -18,36 +20,61 @@ public class RabbitMqChannelManager : IRabbitMqChannelManager, IDisposable
     {
         _config = options.Value;
         _connection = connection ?? throw new ArgumentNullException(nameof(connection));
-        _channelPool = new ConcurrentBag<IChannel>();
+
+        channelPools = new ConcurrentDictionary<string, List<IChannel>>();
+        queueIndex = new ConcurrentDictionary<string, int>();
+        initializationLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+
     }
 
-
-    public async Task<IChannel> GetChannelAsync()
+    public async ValueTask<IChannel> GetChannelAsync(string queueName)
     {
-        if (_channelPool.TryTake(out var channel))
+        if (!channelPools.TryGetValue(queueName, out var pool))
         {
-            return channel;
+            pool = await InitializePoolAsync(queueName, _config.PoolSizePerQueue);
+            channelPools.TryAdd(queueName, pool);
         }
 
-        return await _connection.CreateChannelAsync();
-    }
+        int poolSize = pool.Count;
 
-    public void ReleaseChannel(IChannel channel)
-    {
-        _channelPool.Add(channel);
-    }
+        // round robin
+        // Atomically update the index and wrap it around the pool size
+        int nextIndex = queueIndex.AddOrUpdate(
+            queueName,                     // Key: queue name
+            0,                             // Initial value
+            (key, currentIndex) =>         // Update function
+                (currentIndex + 1) % poolSize // Increment and wrap
+        );
 
-    public void Dispose()
-    {
-        if (_disposed)
-            return;
+        var channel = pool[nextIndex];
 
-        // Dispose all channels in the pool
-        while (_channelPool.TryTake(out var channel))
+        // Replace channel if unhealthy
+        if (!IsChannelHealthy(channel))
         {
-            channel.Dispose();
+            var newChannel = await _connection.CreateChannelAsync();
+            pool[nextIndex] = newChannel;
+            await channel.CloseAsync();
+            channel = newChannel;
         }
 
-        _disposed = true;
+        return channel;
+    }
+
+    private async Task<List<IChannel>> InitializePoolAsync(string queueName, int poolSize)
+    {
+        var pool = new List<IChannel>();
+
+        for (int i = 0; i < poolSize; i++)
+        {
+            var channel = await _connection.CreateChannelAsync();
+            pool.Add(channel);
+        }
+
+        return pool;
+    }
+
+    private bool IsChannelHealthy(IChannel channel)
+    {
+        return channel != null && channel.IsOpen;
     }
 }

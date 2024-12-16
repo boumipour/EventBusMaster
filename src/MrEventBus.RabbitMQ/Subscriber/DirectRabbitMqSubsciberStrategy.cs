@@ -10,14 +10,14 @@ namespace MrEventBus.RabbitMQ.Subscriber;
 
 public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
 {
-    private readonly IRabbitMqChannelManager _connectionManager;
+    private readonly IRabbitMqChannelManager _channelManager;
     private readonly RabbitMqConfiguration _config;
 
     private bool _isSubscribed = false;
 
-    public DirectRabbitMqSubsciberStrategy(IRabbitMqChannelManager connectionManager, IOptions<RabbitMqConfiguration> config)
+    public DirectRabbitMqSubsciberStrategy(IRabbitMqChannelManager channelManager, IOptions<RabbitMqConfiguration> config)
     {
-        _connectionManager = connectionManager;
+        _channelManager = channelManager;
         _config = config.Value;
     }
 
@@ -35,7 +35,7 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
 
             for (int i = 0; i < consumer.ConcurrencyLevel; i++)
             {
-                var channel = await _connectionManager.GetChannelAsync();
+                var channel = await _channelManager.GetChannelAsync($"{consumer.ExchangeName}.{consumer.QueueName}");
                 try
                 {
                     await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: consumer.PrefetchCount, global: false);
@@ -48,8 +48,6 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
                 {
 
                     Console.WriteLine($"Error setting up consumer: {ex.Message}");
-                    // Release channel in case of error
-                    _connectionManager.ReleaseChannel(channel);
                     throw;
                 }
 
@@ -57,7 +55,6 @@ public class DirectRabbitMqSubsciberStrategy : ISubscribeStrategy
                 // Register cancellation to clean up resources
                 cancellationToken.Register(() =>
                 {
-                    _connectionManager.ReleaseChannel(channel);
                     semaphore.Dispose();
                 });
             }

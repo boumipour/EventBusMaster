@@ -15,8 +15,6 @@ public class EventBusProducer : IEventBusProducer
 
     public Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
     {
-        var stopWatch = Stopwatch.StartNew();
-
         try
         {
             Guid messageId = Guid.NewGuid();

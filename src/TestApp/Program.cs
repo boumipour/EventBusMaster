@@ -19,12 +19,16 @@ builder.Services.AddMrEventBus(option =>
     option.VirtualHost = "/";
     option.UserName = "admin";
     option.Password = "admin";
+    
+    option.PoolSizePerQueue = 5;
 
     option.Producers = new[] { typeof(MyEvent) };
     option.Consumers = new[] { new Consumer()
     {
         ConsumerTypes=  new[] { typeof(MyEvent) },
         ExchangeName="test_app",
+        ConcurrencyLevel=100,
+        PrefetchCount=50,
         QueueName="main"
     }};
 });

@@ -10,19 +10,19 @@ namespace MrEventBus.RabbitMQ.Producer;
 
 public class DirectRabbitMqProduceStrategy : IProduceStrategy
 {
-    private readonly IRabbitMqChannelManager _connectionManager;
+    private readonly IRabbitMqChannelManager _channelManager;
     private readonly RabbitMqConfiguration _config;
 
 
-    public DirectRabbitMqProduceStrategy(IRabbitMqChannelManager connectionManager, IOptions<RabbitMqConfiguration> config)
+    public DirectRabbitMqProduceStrategy(IRabbitMqChannelManager channelManager, IOptions<RabbitMqConfiguration> config)
     {
-        _connectionManager = connectionManager;
+        _channelManager = channelManager;
         _config = config.Value;
     }
 
     public async Task PublishAsync<T>(MessageContext<T> messageContext, string queueName = "", CancellationToken cancellationToken = default)
     {
-        using var channel = await _connectionManager.GetChannelAsync();
+        var channel = await _channelManager.GetChannelAsync(queueName);
 
         string messageKey = messageContext?.Message?.GetType().FullName + ", " + messageContext?.Message?.GetType().Assembly.GetName();
 
