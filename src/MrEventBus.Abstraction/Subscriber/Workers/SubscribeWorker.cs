@@ -2,44 +2,42 @@
 using Microsoft.Extensions.Hosting;
 using System.Diagnostics;
 
-namespace MrEventBus.Abstraction.Subscriber.Workers
+namespace MrEventBus.Abstraction.Subscriber.Workers;
+public sealed class SubscribeWorker : BackgroundService
 {
-    public sealed class SubscribeWorker : BackgroundService
+    private readonly IServiceProvider _serviceProvider;
+
+    public SubscribeWorker(IServiceProvider serviceProvider)
     {
-        private readonly IServiceProvider _serviceProvider;
+        _serviceProvider = serviceProvider;
+    }
 
-        public SubscribeWorker(IServiceProvider serviceProvider)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        return Task.Factory.StartNew(async () =>
         {
-            _serviceProvider = serviceProvider;
-        }
+            using var scope = _serviceProvider.CreateScope();
+            var subscriber = scope.ServiceProvider.GetRequiredService<IEventBusSubscriber>();
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            return Task.Factory.StartNew(async () =>
+            while (!stoppingToken.IsCancellationRequested)
             {
-                using var scope = _serviceProvider.CreateScope();
-                var subscriber = scope.ServiceProvider.GetRequiredService<IEventBusSubscriber>();
+                var stopWatch = Stopwatch.StartNew();
 
-                while (!stoppingToken.IsCancellationRequested)
+                try
                 {
-                    var stopWatch = Stopwatch.StartNew();
-
-                    try
-                    {
-                        await subscriber.SubscribeAsync(stoppingToken);
-                    }
-                    catch (Exception exception)
-                    {
-                        Console.WriteLine(exception);
-                        continue;
-                    }
-                    finally
-                    {
-                        Console.WriteLine("Subscribed");
-                        await Task.Delay(Timeout.Infinite, stoppingToken);
-                    }
+                    await subscriber.SubscribeAsync(stoppingToken);
                 }
-            }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-        }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                    continue;
+                }
+                finally
+                {
+                    Console.WriteLine("Subscribed");
+                    await Task.Delay(Timeout.Infinite, stoppingToken);
+                }
+            }
+        }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
     }
 }

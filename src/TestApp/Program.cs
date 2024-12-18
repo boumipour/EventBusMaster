@@ -1,5 +1,6 @@
 using EventBus;
 using MrEventBus.Abstraction.Subscriber;
+using MrEventBus.Boxing.MySql;
 using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
@@ -11,6 +12,7 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
 builder.Services.AddMrEventBus(option => 
 {
     option.ExchangeName = "test_app";
@@ -31,6 +33,14 @@ builder.Services.AddMrEventBus(option =>
         PrefetchCount=50,
         QueueName="main"
     }};
+})
+.AddMySqlOutBoxing(option => 
+{
+    option.EnableOutboxProcessor = true;
+    option.OutboxReaderInterval = new TimeSpan(0, 0, 10);
+    option.ConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+    option.EnabledEvents = new[] { typeof(MyEvent) };
+
 });
 
 

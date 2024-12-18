@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MrEventBus.Abstraction.Subscriber.Strategies;
-using System;
 using System.Text.Json;
 
 namespace MrEventBus.Abstraction.Subscriber;
@@ -43,8 +42,9 @@ public class EventBusSubscriber : IEventBusSubscriber
                 await task;
 
         }
-        catch (Exception)
+        catch (Exception exceptio)
         {
+            Console.WriteLine(exceptio);
             throw;
         }
     }

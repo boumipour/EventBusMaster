@@ -4,5 +4,5 @@ namespace MrEventBus.Abstraction.Producer.Strategies;
 
 public interface IProduceStrategy
 {
-    Task PublishAsync<T>(MessageContext<T> messageContext, string queueName = "", CancellationToken cancellationToken = default);
+    Task PublishAsync<T>(MessageContext<T> messageContext, string queueName = "main", CancellationToken cancellationToken = default);
 }

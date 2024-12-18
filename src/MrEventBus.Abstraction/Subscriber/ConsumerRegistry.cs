@@ -22,6 +22,6 @@ public static class ConsumerMessageRegistry
         }
 
         // Return default tuple if not found (you could throw an exception or handle as needed)
-        return (null, null);
+        return (MessageContextType: null, ConsumerType: null);
     }
 }

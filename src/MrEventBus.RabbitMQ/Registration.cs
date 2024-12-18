@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.ObjectPool;
 using MrEventBus.Abstraction.Producer;
 using MrEventBus.Abstraction.Producer.Strategies;
 using MrEventBus.Abstraction.Subscriber;
@@ -45,7 +44,7 @@ public static class Registration
             var defaultQname = $"{defaultExchangeName}.main";
 
             channel.ExchangeDeclareAsync(exchange: defaultExchangeName, type: ExchangeType.Direct).GetAwaiter().GetResult();
-            channel.QueueDeclareAsync(defaultQname, true, false, false).GetAwaiter().GetResult();
+            channel.QueueDeclareAsync(defaultQname, false, false, false).GetAwaiter().GetResult();
             channel.QueueBindAsync(defaultQname, defaultExchangeName, "main").GetAwaiter().GetResult();
 
             services.AddScoped<IEventBusProducer, EventBusProducer>();

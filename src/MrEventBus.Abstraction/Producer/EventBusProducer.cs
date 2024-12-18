@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Options;
 using MrEventBus.Abstraction.Models;
+using MrEventBus.Abstraction.Producer.Outbox.Config;
+using MrEventBus.Abstraction.Producer.Outbox.Repository;
 using MrEventBus.Abstraction.Producer.Strategies;
-using System.Diagnostics;
 
 namespace MrEventBus.Abstraction.Producer;
 
@@ -8,12 +10,18 @@ public class EventBusProducer : IEventBusProducer
 {
     private readonly IProduceStrategy _publishStrategy;
 
-    public EventBusProducer(IProduceStrategy publishStrategy)
+    private readonly IOutboxRepository? _outboxRepository = null;
+    private readonly OutboxConfiguration? _outboxConfig = null;
+
+    public EventBusProducer(IProduceStrategy publishStrategy, IOutboxRepository? outboxRepository = null, IOptions<OutboxConfiguration>? outboxConfig = null)
     {
         _publishStrategy = publishStrategy;
+        _outboxRepository = outboxRepository;
+        _outboxConfig = outboxConfig?.Value;
+
     }
 
-    public Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
+    public  Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
     {
         try
         {
@@ -21,6 +29,11 @@ public class EventBusProducer : IEventBusProducer
 
             if (string.IsNullOrEmpty(shard))
                 shard = messageId.ToString();
+
+            if (_outboxRepository != null && CheckMessageFullName(message!.GetType().FullName))
+            {
+                return _outboxRepository!.CreateAsync(new OutboxMessage(messageId, message, shard, queueName));
+            }
 
             return _publishStrategy.PublishAsync(new MessageContext<T>
             {
@@ -30,12 +43,20 @@ public class EventBusProducer : IEventBusProducer
                 PublishDateTime = DateTime.Now
             }
             , queueName);
-        }
-        catch (Exception)
-        {
 
+
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
             throw;
         }
+    }
+
+
+    private bool CheckMessageFullName(string fullName)
+    {
+        return _outboxConfig?.EnabledEvents.Any(a => a.FullName == fullName) ?? false;
     }
 
 }
