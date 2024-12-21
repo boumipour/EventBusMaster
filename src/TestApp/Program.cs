@@ -25,22 +25,22 @@ builder.Services.AddMrEventBus(option =>
     option.PoolSizePerQueue = 5;
 
     option.Producers = new[] { typeof(MyEvent) };
-    option.Consumers = new[] { new Consumer()
-    {
-        ConsumerTypes=  new[] { typeof(MyEvent) },
-        ExchangeName="test_app",
-        ConcurrencyLevel=100,
-        PrefetchCount=50,
-        QueueName="main"
-    }};
+    //option.Consumers = new[] { new Consumer()
+    //{
+    //    ConsumerTypes=  new[] { typeof(MyEvent) },
+    //    ExchangeName="test_app",
+    //    ConcurrencyLevel=100,
+    //    PrefetchCount=50,
+    //    QueueName="main"
+    //}};
 })
 .AddMySqlOutBoxing(option => 
 {
     option.EnableOutboxProcessor = true;
-    option.OutboxReaderInterval = new TimeSpan(0, 0, 10);
+    option.OutboxProcessConcurrency = 10;
+    option.OutboxReaderInterval = new TimeSpan(0, 0, 5);
     option.ConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
     option.EnabledEvents = new[] { typeof(MyEvent) };
-
 });
 
 

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MrEventBus.Abstraction.Producer.Outbox.Config;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
 using MrEventBus.Abstraction.Producer.Outbox.Worker;
-using MySqlConnector;
 
 namespace MrEventBus.Boxing.MySql;
 
@@ -17,9 +16,9 @@ public static class Registeration
         if (configurator != null)
             services.Configure(configurator);
 
-
-        services.AddTransient(_ => new MySqlConnection(conf.ConnectionString));
+        services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.ConnectionString));
         services.AddScoped<IOutboxRepository, OutboxMySqlRepository>();
+        services.AddScoped<StoredProcedureCreator>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
 

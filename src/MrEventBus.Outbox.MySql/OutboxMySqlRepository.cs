@@ -1,24 +1,26 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
-using MySqlConnector;
 using System.Data;
 
 namespace MrEventBus.Boxing.MySql
 {
     public class OutboxMySqlRepository : IOutboxRepository
     {
-        private readonly MySqlConnection _mySqlConnection;
+        private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
+        private readonly StoredProcedureCreator _storedProcedureCreator;
 
-        public OutboxMySqlRepository(MySqlConnection mySqlConnection)
+        public OutboxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, StoredProcedureCreator storedProcedureCreator)
         {
-            _mySqlConnection = mySqlConnection;
+            _mySqlConnectionFactory = mySqlConnectionFactory;
+            _storedProcedureCreator = storedProcedureCreator;
         }
 
         public async Task CreateAsync(OutboxMessage outboxMessage)
         {
             try
             {
+                await _storedProcedureCreator.CreateAllStoredProceduresAsync();
                 var param = new Dictionary<string, object>()
                 {
                     ["@IN_MessageId"] = outboxMessage.MessageId,
@@ -33,7 +35,8 @@ namespace MrEventBus.Boxing.MySql
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                await _mySqlConnection.ExecuteAsync("OutBox_Insert", parameters, commandType: CommandType.StoredProcedure);
+                using var connection = _mySqlConnectionFactory.CreateConnection();
+                await connection.ExecuteAsync("OutBox_Insert", parameters, commandType: CommandType.StoredProcedure);
 
             }
             catch (Exception exception)
@@ -47,6 +50,8 @@ namespace MrEventBus.Boxing.MySql
         {
             try
             {
+                await _storedProcedureCreator.CreateAllStoredProceduresAsync();
+
                 var state = (int)OutboxMessageState.Sended;
 
                 var param = new Dictionary<string, object>()
@@ -57,7 +62,8 @@ namespace MrEventBus.Boxing.MySql
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                await _mySqlConnection.ExecuteAsync("OutBox_Delete", parameters, commandType: CommandType.StoredProcedure);
+                using var connection = _mySqlConnectionFactory.CreateConnection();
+                await connection.ExecuteAsync("OutBox_Delete", parameters, commandType: CommandType.StoredProcedure);
 
             }
             catch (Exception exception)
@@ -71,7 +77,10 @@ namespace MrEventBus.Boxing.MySql
         {
             try
             {
-                return await _mySqlConnection.QueryAsync<OutboxMessage>("OutBox_Select", commandType: CommandType.StoredProcedure);
+                await _storedProcedureCreator.CreateAllStoredProceduresAsync();
+
+                using var connection = _mySqlConnectionFactory.CreateConnection();
+                return await connection.QueryAsync<OutboxMessage>("OutBox_Select", commandType: CommandType.StoredProcedure);
             }
             catch (Exception exception)
             {
@@ -84,6 +93,8 @@ namespace MrEventBus.Boxing.MySql
         {
             try
             {
+                await _storedProcedureCreator.CreateAllStoredProceduresAsync();
+
                 var param = new Dictionary<string, object>()
                 {
                     ["@IN_MessageId"] = outboxMessage.MessageId,
@@ -92,7 +103,8 @@ namespace MrEventBus.Boxing.MySql
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                await _mySqlConnection.ExecuteAsync("OutBox_Update", parameters, commandType: CommandType.StoredProcedure);
+                using var connection = _mySqlConnectionFactory.CreateConnection();
+                await connection.ExecuteAsync("OutBox_Update", parameters, commandType: CommandType.StoredProcedure);
 
             }
             catch (Exception exception)

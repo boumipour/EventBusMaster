@@ -1,22 +1,23 @@
-﻿using MySqlConnector;
+﻿using Dapper;
+using System.Data;
 
 namespace MrEventBus.Boxing.MySql;
 
 public class StoredProcedureCreator
 {
-    private readonly MySqlConnection _mySqlConnection;
+    private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
 
-    public StoredProcedureCreator(MySqlConnection mySqlConnection)
+    private static bool _isInitialized;
+    private static readonly object _lock = new();
+
+    public StoredProcedureCreator(IMySqlConnectionFactory mySqlConnectionFactory)
     {
-        _mySqlConnection = mySqlConnection;
+        _mySqlConnectionFactory = mySqlConnectionFactory;
     }
 
-    public async Task CreateStoredProcedureAsync()
-    {
-        const string OutBox_Insert = @"
-        DROP PROCEDURE IF EXISTS OutBox_Insert
-
-        CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Insert`(
+    const string OutBox_Insert_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Insert";
+    const string OutBox_Insert_SP_Create = @"
+        CREATE PROCEDURE OutBox_Insert (
 		    IN IN_MessageId VARCHAR(36),
             IN IN_Type VARCHAR(500),
             IN IN_Data TEXT,
@@ -51,9 +52,8 @@ public class StoredProcedureCreator
 		    );
         END";
 
-        const string OutBox_Select = @"
-        DROP PROCEDURE IF EXISTS OutBox_Select
-
+    const string OutBox_Select_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Select";
+    const string OutBox_Select_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Select`()
         BEGIN
 		    
@@ -82,9 +82,8 @@ public class StoredProcedureCreator
         
         END";
 
-        const string OutBox_Update = @"
-        DROP PROCEDURE IF EXISTS OutBox_Update
-
+    const string OutBox_Update_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Update";
+    const string OutBox_Update_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Update`
         (
 		    IN IN_MessageId VARCHAR(36),
@@ -98,7 +97,8 @@ public class StoredProcedureCreator
 		     WHERE MessageId = IN_MessageId;
         END";
 
-        const string OutBox_Delete = @"
+    const string OutBox_Delete_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Delete";
+    const string OutBox_Delete_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Delete`
         (
 		   IN IN_PersistencePeriodInDays int,
@@ -110,27 +110,56 @@ public class StoredProcedureCreator
 		        AND State = IN_State;
         END";
 
+
+    public async ValueTask CreateAllStoredProceduresAsync()
+    {
+
+        if (_isInitialized) return;
+
+        lock (_lock)
+        {
+            if (_isInitialized) return;
+            _isInitialized = true;
+        }
+
+        var procedures = new[]
+        {
+            ("OutBox_Insert", OutBox_Insert_SP_Drop, OutBox_Insert_SP_Create),
+            ("OutBox_Select", OutBox_Select_SP_Drop, OutBox_Select_SP_Create),
+            ("OutBox_Update", OutBox_Update_SP_Drop, OutBox_Update_SP_Create),
+            ("OutBox_Delete", OutBox_Delete_SP_Drop, OutBox_Delete_SP_Create)
+        };
+
+        foreach (var (name, dropCommand, createCommand) in procedures)
+        {
+            await CreateStoredProcedureAsync(name, dropCommand, createCommand);
+        }
+    }
+
+
+    public async Task CreateStoredProcedureAsync(string procedureName, string dropCommand, string createCommand)
+    {
+        const string checkProcedureExists = @"
+        SELECT COUNT(*) 
+        FROM INFORMATION_SCHEMA.ROUTINES 
+        WHERE ROUTINE_SCHEMA = DATABASE() AND ROUTINE_NAME = @ProcedureName";
+
+        using var connection = _mySqlConnectionFactory.CreateConnection();
+        var exists = await connection.ExecuteScalarAsync<int>(
+            checkProcedureExists,
+            new { ProcedureName = procedureName });
+
+        if (exists > 0) return;
+
         try
         {
-            await _mySqlConnection.OpenAsync();
-
-            await using var command1 = new MySqlCommand(OutBox_Insert, _mySqlConnection);
-            await command1.ExecuteNonQueryAsync();
-
-            await using var command2 = new MySqlCommand(OutBox_Select, _mySqlConnection);
-            await command2.ExecuteNonQueryAsync();
-
-            await using var command3 = new MySqlCommand(OutBox_Update, _mySqlConnection);
-            await command2.ExecuteNonQueryAsync();
-
-            await using var command4 = new MySqlCommand(OutBox_Delete, _mySqlConnection);
-            await command2.ExecuteNonQueryAsync();
-
-            Console.WriteLine("Stored procedure created successfully.");
+            await connection.ExecuteAsync(dropCommand, commandType: CommandType.Text);
+            await connection.ExecuteAsync(createCommand, commandType: CommandType.Text);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            Console.WriteLine($"An error occurred while creating procedure {procedureName}: {ex.Message}");
         }
     }
+
 }
