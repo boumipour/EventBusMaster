@@ -8,10 +8,10 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker;
 
 public class OutboxClearWorker : BackgroundService
 {
-    readonly OutboxConfiguration _config;
+    readonly OutboxConfig _config;
     readonly IOutboxRepository _outboxRepository;
 
-    public OutboxClearWorker(IOptions<OutboxConfiguration> config, IOutboxRepository outboxRepository)
+    public OutboxClearWorker(IOptions<OutboxConfig> config, IOutboxRepository outboxRepository)
     {
         _config = config.Value;
         _outboxRepository = outboxRepository;
@@ -26,7 +26,7 @@ public class OutboxClearWorker : BackgroundService
             {
                 _stopwatch.Restart();
 
-                await _outboxRepository.DeleteAsync(_config.OutboxPersistenceDuration.TotalDays);
+                await _outboxRepository.DeleteAsync(_config.PersistenceDuration.TotalDays);
             }
             catch (Exception exception)
             {
@@ -35,13 +35,13 @@ public class OutboxClearWorker : BackgroundService
             }
 
             ///max value should be 49 days or delay will throw OutOfRangeException
-            if (_config.OutboxPersistenceDuration.TotalMilliseconds > uint.MaxValue)
+            if (_config.PersistenceDuration.TotalMilliseconds > uint.MaxValue)
             {
                 await Task.Delay(int.MaxValue, stoppingToken);
             }
             else
             {
-                await Task.Delay(_config.OutboxPersistenceDuration, stoppingToken);
+                await Task.Delay(_config.PersistenceDuration, stoppingToken);
             }
         }
     }

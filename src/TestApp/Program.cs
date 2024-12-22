@@ -25,22 +25,32 @@ builder.Services.AddMrEventBus(option =>
     option.PoolSizePerQueue = 5;
 
     option.Producers = new[] { typeof(MyEvent) };
-    //option.Consumers = new[] { new Consumer()
-    //{
-    //    ConsumerTypes=  new[] { typeof(MyEvent) },
-    //    ExchangeName="test_app",
-    //    ConcurrencyLevel=100,
-    //    PrefetchCount=50,
-    //    QueueName="main"
-    //}};
+    option.Consumers = new[] { new Consumer()
+    {
+        ConsumerTypes=  new[] { typeof(MyEvent) },
+        ExchangeName="test_app",
+        ConcurrencyLevel=100,
+        PrefetchCount=50,
+        QueueName="main"
+    }};
 })
 .AddMySqlOutBoxing(option => 
 {
-    option.EnableOutboxProcessor = true;
-    option.OutboxProcessConcurrency = 10;
-    option.OutboxReaderInterval = new TimeSpan(0, 0, 5);
-    option.ConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+    option.EnabledProcessor = true;
+    option.Concurrency = 10;
+    option.ReaderInterval = new TimeSpan(0, 0, 5);
     option.EnabledEvents = new[] { typeof(MyEvent) };
+
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+})
+.AddMySqlInBoxing(option =>
+{
+    option.EnabledProcessor = false;
+    option.Concurrency = 1;
+    option.ReaderInterval = new TimeSpan(0, 0, 50);
+    option.EnabledEvents = new[] { typeof(MyEvent) };
+
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
 });
 
 

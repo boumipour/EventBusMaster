@@ -11,9 +11,9 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
     public class OutboxProcessorWorker : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly OutboxConfiguration _outboxingConfig;
+        private readonly OutboxConfig _outboxingConfig;
 
-        public OutboxProcessorWorker(IServiceProvider serviceProvider, IOptions<OutboxConfiguration> outboxingConfig)
+        public OutboxProcessorWorker(IServiceProvider serviceProvider, IOptions<OutboxConfig> outboxingConfig)
         {
             _serviceProvider = serviceProvider;
             _outboxingConfig = outboxingConfig.Value;
@@ -31,13 +31,14 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
                     {
                         var repository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
                         var publisher = scope.ServiceProvider.GetRequiredService<IProduceStrategy>();
+
                         var messages = (await repository.GetAsync()).ToList();
 
 
                         ParallelOptions option = new()
                         {
                             CancellationToken = stoppingToken,
-                            MaxDegreeOfParallelism = 10
+                            MaxDegreeOfParallelism = _outboxingConfig.Concurrency
                         };
 
                         Parallel.ForEach(messages, option, async (message) =>
@@ -55,10 +56,10 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
 
                     finally
                     {
-                        await Task.Delay(((int)_outboxingConfig.OutboxReaderInterval.TotalMilliseconds), stoppingToken);
+                        await Task.Delay(_outboxingConfig.ReaderInterval, stoppingToken);
                     }
                 }
-            }, stoppingToken, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+            }, stoppingToken, TaskCreationOptions.None, TaskScheduler.Default);
         }
 
 

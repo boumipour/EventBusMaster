@@ -1,21 +1,39 @@
 ﻿using Dapper;
+using MrEventBus.Boxing.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Boxing.MySql;
+namespace MrEventBus.Boxing.MySql.OutBox;
 
-public class StoredProcedureCreator
+public class OutBoxDbInitializer
 {
     private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
 
     private static bool _isInitialized;
     private static readonly object _lock = new();
 
-    public StoredProcedureCreator(IMySqlConnectionFactory mySqlConnectionFactory)
+    public OutBoxDbInitializer(IMySqlConnectionFactory mySqlConnectionFactory)
     {
         _mySqlConnectionFactory = mySqlConnectionFactory;
     }
 
-    const string OutBox_Insert_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Insert";
+
+    const string OutBox_tbl_Create = @"
+    CREATE TABLE `OutboxMessages`  
+    (
+        `MessageId` varchar(36) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+        `Type` varchar(500) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+        `Data` text CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+        `State` smallint(6) NOT NULL,        
+        `Shard` varchar(36) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+        `ShardOffset` int(11) NOT NULL,
+        `QueueName` varchar(200) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL,
+        `CreateDateTime` datetime NOT NULL,
+        `LastModifyDateTime` datetime NULL DEFAULT NULL,
+        `LockUntil` datetime NULL DEFAULT NULL,
+        `BatchId` varchar(36) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL
+    ) 
+    ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;";
+    
     const string OutBox_Insert_SP_Create = @"
         CREATE PROCEDURE OutBox_Insert (
 		    IN IN_MessageId VARCHAR(36),
@@ -52,7 +70,7 @@ public class StoredProcedureCreator
 		    );
         END";
 
-    const string OutBox_Select_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Select";
+    //todo:fix lockUntil duration and get remain message with state 2
     const string OutBox_Select_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Select`()
         BEGIN
@@ -81,8 +99,7 @@ public class StoredProcedureCreator
             WHERE BatchId = @batchId;
         
         END";
-
-    const string OutBox_Update_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Update";
+    
     const string OutBox_Update_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Update`
         (
@@ -96,8 +113,7 @@ public class StoredProcedureCreator
 				LastModifyDateTime = NOW()
 		     WHERE MessageId = IN_MessageId;
         END";
-
-    const string OutBox_Delete_SP_Drop = "DROP PROCEDURE IF EXISTS OutBox_Delete";
+    
     const string OutBox_Delete_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Delete`
         (
@@ -110,8 +126,7 @@ public class StoredProcedureCreator
 		        AND State = IN_State;
         END";
 
-
-    public async ValueTask CreateAllStoredProceduresAsync()
+    public async ValueTask InitializeAsync()
     {
 
         if (_isInitialized) return;
@@ -122,22 +137,31 @@ public class StoredProcedureCreator
             _isInitialized = true;
         }
 
-        var procedures = new[]
+        var tables = new[]
         {
-            ("OutBox_Insert", OutBox_Insert_SP_Drop, OutBox_Insert_SP_Create),
-            ("OutBox_Select", OutBox_Select_SP_Drop, OutBox_Select_SP_Create),
-            ("OutBox_Update", OutBox_Update_SP_Drop, OutBox_Update_SP_Create),
-            ("OutBox_Delete", OutBox_Delete_SP_Drop, OutBox_Delete_SP_Create)
+            ("OutboxMessages",  OutBox_tbl_Create),
         };
 
-        foreach (var (name, dropCommand, createCommand) in procedures)
+        var procedures = new[]
         {
-            await CreateStoredProcedureAsync(name, dropCommand, createCommand);
+            ("OutBox_Insert",  OutBox_Insert_SP_Create),
+            ("OutBox_Select",  OutBox_Select_SP_Create),
+            ("OutBox_Update",  OutBox_Update_SP_Create),
+            ("OutBox_Delete",  OutBox_Delete_SP_Create)
+        };
+
+        foreach (var (name, createCommand) in tables)
+        {
+            await CreateTableAsync(name, createCommand);
+        }
+
+        foreach (var (name, createCommand) in procedures)
+        {
+            await CreateStoredProcedureAsync(name, createCommand);
         }
     }
 
-
-    public async Task CreateStoredProcedureAsync(string procedureName, string dropCommand, string createCommand)
+    private async Task CreateStoredProcedureAsync(string procedureName, string createCommand)
     {
         const string checkProcedureExists = @"
         SELECT COUNT(*) 
@@ -153,7 +177,6 @@ public class StoredProcedureCreator
 
         try
         {
-            await connection.ExecuteAsync(dropCommand, commandType: CommandType.Text);
             await connection.ExecuteAsync(createCommand, commandType: CommandType.Text);
         }
         catch (Exception ex)
@@ -162,4 +185,27 @@ public class StoredProcedureCreator
         }
     }
 
+    private async Task CreateTableAsync(string tableName, string createCommand)
+    {
+        const string checkTableExists = @"
+        SELECT *
+        FROM INFORMATION_SCHEMA.TABLES
+        WHERE TABLE_NAME = @TableName";
+
+        using var connection = _mySqlConnectionFactory.CreateConnection();
+        var exists = await connection.ExecuteScalarAsync<int>(
+            checkTableExists,
+            new { TableName = tableName });
+
+        if (exists > 0) return;
+
+        try
+        {
+            await connection.ExecuteAsync(createCommand, commandType: CommandType.Text);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while creating table {tableName}: {ex.Message}");
+        }
+    }
 }

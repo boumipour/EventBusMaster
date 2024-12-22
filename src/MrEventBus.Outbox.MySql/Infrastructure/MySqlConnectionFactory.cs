@@ -1,13 +1,13 @@
 ﻿using MySqlConnector;
 
-namespace MrEventBus.Boxing.MySql
+namespace MrEventBus.Boxing.MySql.Infrastructure
 {
-    public interface IMySqlConnectionFactory 
+    public interface IMySqlConnectionFactory
     {
         MySqlConnection CreateConnection();
     }
 
-    public class MySqlConnectionFactory: IMySqlConnectionFactory
+    public class MySqlConnectionFactory : IMySqlConnectionFactory
     {
         private readonly string _connectionString;
 

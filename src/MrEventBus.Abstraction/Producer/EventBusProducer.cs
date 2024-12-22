@@ -11,9 +11,9 @@ public class EventBusProducer : IEventBusProducer
     private readonly IProduceStrategy _publishStrategy;
 
     private readonly IOutboxRepository? _outboxRepository = null;
-    private readonly OutboxConfiguration? _outboxConfig = null;
+    private readonly OutboxConfig? _outboxConfig = null;
 
-    public EventBusProducer(IProduceStrategy publishStrategy, IOutboxRepository? outboxRepository = null, IOptions<OutboxConfiguration>? outboxConfig = null)
+    public EventBusProducer(IProduceStrategy publishStrategy, IOutboxRepository? outboxRepository = null, IOptions<OutboxConfig>? outboxConfig = null)
     {
         _publishStrategy = publishStrategy;
         _outboxRepository = outboxRepository;
@@ -21,7 +21,7 @@ public class EventBusProducer : IEventBusProducer
 
     }
 
-    public  Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
+    public  async Task PublishAsync<T>(T message, string shard = "", string queueName = "main") where T : class
     {
         try
         {
@@ -32,10 +32,11 @@ public class EventBusProducer : IEventBusProducer
 
             if (_outboxRepository != null && CheckMessageFullName(message!.GetType().FullName))
             {
-                return _outboxRepository!.CreateAsync(new OutboxMessage(messageId, message, shard, queueName));
+                await _outboxRepository!.CreateAsync(new OutboxMessage(messageId, message, shard, queueName));
+                return;
             }
 
-            return _publishStrategy.PublishAsync(new MessageContext<T>
+            await _publishStrategy.PublishAsync(new MessageContext<T>
             {
                 Message = message,
                 MessageId = messageId,
@@ -43,8 +44,6 @@ public class EventBusProducer : IEventBusProducer
                 PublishDateTime = DateTime.Now
             }
             , queueName);
-
-
         }
         catch (Exception exception)
         {
