@@ -7,8 +7,8 @@ using TestApp;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    ;
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -36,20 +36,22 @@ builder.Services.AddMrEventBus(option =>
 })
 .AddMySqlOutBoxing(option => 
 {
-    option.EnabledProcessor = true;
+    option.EnabledProcessor = false;
     option.Concurrency = 10;
     option.ReaderInterval = new TimeSpan(0, 0, 5);
     option.EnabledEvents = new[] { typeof(MyEvent) };
 
     option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+    option.DBInitializer = false;
 })
 .AddMySqlInBoxing(option =>
 {
     option.EnabledProcessor = false;
-    option.Concurrency = 1;
-    option.ReaderInterval = new TimeSpan(0, 0, 50);
+    option.Concurrency = 10;
+    option.ReaderInterval = new TimeSpan(0, 0, 5);
     option.EnabledEvents = new[] { typeof(MyEvent) };
-
+    
+    option.DBInitializer = false;
     option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
 });
 

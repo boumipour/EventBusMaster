@@ -70,8 +70,6 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
             if (messagePayload == null)
                 return;
 
-            //var messageType = Type.GetType(message.Type);
-
             await publisher.PublishAsync(new MessageContext<object>()
             {
                 Message = messagePayload,

@@ -64,14 +64,11 @@ namespace MrEventBus.Abstraction.Subscriber.Inbox.Worker
             }, stoppingToken, TaskCreationOptions.None, TaskScheduler.Default);
         }
 
+        //todo: review performance issue
         private async Task ConsumeMessageAsync(IServiceScope serviceScope, IInboxRepository repository, InboxMessage message)
         {
             try
             {
-                var messagePayload = message.RecreateMessage();
-                if (messagePayload == null)
-                    return;
-
                 var messageType = Type.GetType(message.Type);
                 if (messageType == null)
                 {
@@ -80,13 +77,18 @@ namespace MrEventBus.Abstraction.Subscriber.Inbox.Worker
                 }
 
                 var types = ConsumerMessageRegistry.GetMessageRelatedType(messageType);
+   
+                var messageContext = Activator.CreateInstance(types.MessageContextType);
+                types.MessageContextType.GetProperty("Message")?.SetValue(messageContext, message.RecreateMessage());
+                types.MessageContextType.GetProperty("MessageId")?.SetValue(messageContext, message.MessageId);
+                types.MessageContextType.GetProperty("PublishDateTime")?.SetValue(messageContext, message.PublishDateTime);
+                types.MessageContextType.GetProperty("Shard")?.SetValue(messageContext, message.Shard);
 
                 var consumer = serviceScope.ServiceProvider.GetRequiredService(types.ConsumerType);
 
-                //todo: fix
-                var consumeMethod = types.ConsumerType.GetMethod("ConsumeAsync", new[] { types.MessageContextType });
+                var consumeMethod = types.ConsumerType.GetMethod("ConsumeAsync");
 
-                Task? task = consumeMethod?.Invoke(consumer, new[] { messagePayload }) as Task;
+                Task? task = consumeMethod?.Invoke(consumer, new[] { messageContext }) as Task;
 
                 if (task != null)
                     await task;
@@ -94,10 +96,10 @@ namespace MrEventBus.Abstraction.Subscriber.Inbox.Worker
                 message.Consumed();
                 await repository.UpdateAsync(message);
             }
-            catch(Exception exception) 
+            catch (Exception exception)
             {
-               Console.WriteLine(exception);
-               return;
+                Console.WriteLine(exception);
+                return;
             }
         }
     }

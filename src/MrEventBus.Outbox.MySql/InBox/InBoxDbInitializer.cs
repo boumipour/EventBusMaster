@@ -42,7 +42,7 @@ public class InBoxDbInitializer
             UPDATE InboxMessages om
             JOIN (
                 SELECT MIN(ShardOffset) AS minShardOffset, Shard
-                FROM OutboxMessages
+                FROM InboxMessages
                 WHERE State = 1
                 GROUP BY Shard
             ) AS subquery ON om.Shard = subquery.Shard
