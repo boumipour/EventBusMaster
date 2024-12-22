@@ -9,18 +9,19 @@ namespace MrEventBus.Boxing.MySql.InBox
     public class InBoxMySqlRepository : IInboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
-        private readonly InBoxDbInitializer _storedProcedureCreator;
+        private readonly InBoxDbInitializer? _dbInitializer;
 
-        public InBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, InBoxDbInitializer storedProcedureCreator)
+        public InBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, InBoxDbInitializer? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
-            _storedProcedureCreator = storedProcedureCreator;
+            _dbInitializer = dbInitializer;
         }
         public async Task<InboxMessage> GetAsync(Guid messageId)
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if(_dbInitializer != null) 
+                    await _dbInitializer.InitializeAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryFirstAsync<InboxMessage>("InBox_Select_ById", commandType: CommandType.StoredProcedure);
@@ -36,7 +37,8 @@ namespace MrEventBus.Boxing.MySql.InBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryAsync<InboxMessage>("InBox_Select", commandType: CommandType.StoredProcedure);
@@ -47,12 +49,14 @@ namespace MrEventBus.Boxing.MySql.InBox
                 throw;
             }
         }
-       
+
         public async Task CreateAsync(InboxMessage inboxMessage)
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
+
                 var param = new Dictionary<string, object>()
                 {
                     ["@IN_MessageId"] = inboxMessage.MessageId,
@@ -83,7 +87,8 @@ namespace MrEventBus.Boxing.MySql.InBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -108,7 +113,7 @@ namespace MrEventBus.Boxing.MySql.InBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                await _dbInitializer.InitializeAsync();
 
                 var state = (int)OutboxMessageState.Sended;
 
@@ -131,6 +136,6 @@ namespace MrEventBus.Boxing.MySql.InBox
             }
         }
 
-      
+
     }
 }

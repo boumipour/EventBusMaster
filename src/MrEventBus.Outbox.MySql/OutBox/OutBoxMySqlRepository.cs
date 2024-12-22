@@ -9,19 +9,20 @@ namespace MrEventBus.Boxing.MySql.OutBox
     public class OutBoxMySqlRepository : IOutboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
-        private readonly OutBoxDbInitializer _storedProcedureCreator;
+        private readonly OutBoxDbInitializer? _dbInitializer;
 
-        public OutBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, OutBoxDbInitializer storedProcedureCreator)
+        public OutBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, OutBoxDbInitializer? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
-            _storedProcedureCreator = storedProcedureCreator;
+            _dbInitializer = dbInitializer;
         }
 
         public async Task<IEnumerable<OutboxMessage>> GetAsync()
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryAsync<OutboxMessage>("OutBox_Select", commandType: CommandType.StoredProcedure);
@@ -37,7 +38,9 @@ namespace MrEventBus.Boxing.MySql.OutBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
+
                 var param = new Dictionary<string, object>()
                 {
                     ["@IN_MessageId"] = outboxMessage.MessageId,
@@ -67,7 +70,8 @@ namespace MrEventBus.Boxing.MySql.OutBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -92,7 +96,8 @@ namespace MrEventBus.Boxing.MySql.OutBox
         {
             try
             {
-                await _storedProcedureCreator.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.InitializeAsync();
 
                 var state = (int)OutboxMessageState.Sended;
 

@@ -2,7 +2,8 @@
 
 namespace MrEventBus.Boxing.MySql.OutBox;
 
-public class MySqlOutboxConfiguration : OutboxConfig
+public class MySqlOutboxConfig : OutboxConfig
 {
+    public bool DBInitializer { get; set; } = false;
     public string MySqlConnectionString { get; set; } = string.Empty;
 }

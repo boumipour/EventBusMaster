@@ -15,9 +15,9 @@ namespace MrEventBus.Boxing.MySql;
 
 public static class Registeration
 {
-    public static IServiceCollection AddMySqlOutBoxing(this IServiceCollection services, Action<MySqlOutboxConfiguration>? configurator = null)
+    public static IServiceCollection AddMySqlOutBoxing(this IServiceCollection services, Action<MySqlOutboxConfig>? configurator = null)
     {
-        MySqlOutboxConfiguration conf = new();
+        MySqlOutboxConfig conf = new();
         configurator?.Invoke(conf);
 
         if (configurator != null)
@@ -35,7 +35,9 @@ public static class Registeration
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
         services.AddScoped<IOutboxRepository, OutBoxMySqlRepository>();
-        services.AddScoped<OutBoxDbInitializer>();
+        
+        if(conf.DBInitializer)
+            services.AddScoped<OutBoxDbInitializer>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
 
@@ -51,9 +53,9 @@ public static class Registeration
     }
 
 
-    public static IServiceCollection AddMySqlInBoxing(this IServiceCollection services, Action<MySqlInboxConfiguration>? configurator = null)
+    public static IServiceCollection AddMySqlInBoxing(this IServiceCollection services, Action<MySqlInboxConfig>? configurator = null)
     {
-        MySqlInboxConfiguration conf = new();
+        MySqlInboxConfig conf = new();
         configurator?.Invoke(conf);
 
         if (configurator != null)
@@ -72,7 +74,9 @@ public static class Registeration
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
         services.AddScoped<IInboxRepository, InBoxMySqlRepository>();
-        services.AddScoped<InBoxDbInitializer>();
+        
+        if(conf.DBInitializer)
+            services.AddScoped<InBoxDbInitializer>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
 
