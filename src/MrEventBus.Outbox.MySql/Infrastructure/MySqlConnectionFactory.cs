@@ -1,6 +1,6 @@
 ﻿using MySqlConnector;
 
-namespace MrEventBus.Boxing.MySql.Infrastructure
+namespace MrEventBus.Box.MySql.Infrastructure
 {
     public interface IMySqlConnectionFactory
     {

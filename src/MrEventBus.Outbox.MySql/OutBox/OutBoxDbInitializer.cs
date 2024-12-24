@@ -1,8 +1,8 @@
 ﻿using Dapper;
-using MrEventBus.Boxing.MySql.Infrastructure;
+using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Boxing.MySql.OutBox;
+namespace MrEventBus.Box.MySql.OutBox;
 
 public class OutBoxDbInitializer
 {
@@ -33,7 +33,7 @@ public class OutBoxDbInitializer
         `BatchId` varchar(36) CHARACTER SET latin1 COLLATE latin1_swedish_ci NULL DEFAULT NULL
     ) 
     ENGINE = InnoDB CHARACTER SET = latin1 COLLATE = latin1_swedish_ci ROW_FORMAT = Dynamic;";
-    
+
     const string OutBox_Insert_SP_Create = @"
         CREATE PROCEDURE OutBox_Insert (
 		    IN IN_MessageId VARCHAR(36),
@@ -99,7 +99,7 @@ public class OutBoxDbInitializer
             WHERE BatchId = @batchId;
         
         END";
-    
+
     const string OutBox_Update_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Update`
         (
@@ -113,7 +113,7 @@ public class OutBoxDbInitializer
 				LastModifyDateTime = NOW()
 		     WHERE MessageId = IN_MessageId;
         END";
-    
+
     const string OutBox_Delete_SP_Create = @"
         CREATE DEFINER=`root`@`%` PROCEDURE `OutBox_Delete`
         (

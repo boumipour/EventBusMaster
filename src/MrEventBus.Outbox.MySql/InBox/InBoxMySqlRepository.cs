@@ -4,7 +4,7 @@ using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
 using MrEventBus.Boxing.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Boxing.MySql.InBox
+namespace MrEventBus.Box.MySql.InBox
 {
     public class InBoxMySqlRepository : IInboxRepository
     {
@@ -20,7 +20,7 @@ namespace MrEventBus.Boxing.MySql.InBox
         {
             try
             {
-                if(_dbInitializer != null) 
+                if (_dbInitializer != null)
                     await _dbInitializer.InitializeAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();

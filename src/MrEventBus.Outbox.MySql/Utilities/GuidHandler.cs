@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using System.Data;
-namespace MrEventBus.Boxing.MySql.Utilities
+namespace MrEventBus.Box.MySql.Utilities
 {
     public class GuidHandler : SqlMapper.TypeHandler<Guid>
     {

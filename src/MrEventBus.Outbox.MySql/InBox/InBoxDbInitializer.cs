@@ -1,8 +1,8 @@
 ﻿using Dapper;
-using MrEventBus.Boxing.MySql.Infrastructure;
+using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Boxing.MySql.InBox;
+namespace MrEventBus.Box.MySql.InBox;
 
 public class InBoxDbInitializer
 {
@@ -169,7 +169,7 @@ public class InBoxDbInitializer
 
         foreach (var (name, createCommand) in procedures)
         {
-            await CreateStoredProcedureAsync(name,  createCommand);
+            await CreateStoredProcedureAsync(name, createCommand);
         }
     }
 

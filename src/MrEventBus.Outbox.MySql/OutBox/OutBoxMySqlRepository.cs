@@ -1,10 +1,10 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
-using MrEventBus.Boxing.MySql.Infrastructure;
+using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Boxing.MySql.OutBox
+namespace MrEventBus.Box.MySql.OutBox
 {
     public class OutBoxMySqlRepository : IOutboxRepository
     {

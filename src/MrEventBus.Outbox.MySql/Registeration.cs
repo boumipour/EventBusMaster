@@ -6,12 +6,12 @@ using MrEventBus.Abstraction.Producer.Outbox.Worker;
 using MrEventBus.Abstraction.Subscriber.Inbox.Config;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
 using MrEventBus.Abstraction.Subscriber.Inbox.Worker;
-using MrEventBus.Boxing.MySql.InBox;
-using MrEventBus.Boxing.MySql.Infrastructure;
-using MrEventBus.Boxing.MySql.OutBox;
+using MrEventBus.Box.MySql.InBox;
+using MrEventBus.Box.MySql.Infrastructure;
+using MrEventBus.Box.MySql.OutBox;
 using MrEventBus.Boxing.MySql.Utilities;
 
-namespace MrEventBus.Boxing.MySql;
+namespace MrEventBus.Box.MySql;
 
 public static class Registeration
 {
@@ -35,8 +35,8 @@ public static class Registeration
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
         services.AddScoped<IOutboxRepository, OutBoxMySqlRepository>();
-        
-        if(conf.DBInitializer)
+
+        if (conf.DBInitializer)
             services.AddScoped<OutBoxDbInitializer>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
@@ -74,8 +74,8 @@ public static class Registeration
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
         services.AddScoped<IInboxRepository, InBoxMySqlRepository>();
-        
-        if(conf.DBInitializer)
+
+        if (conf.DBInitializer)
             services.AddScoped<InBoxDbInitializer>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
