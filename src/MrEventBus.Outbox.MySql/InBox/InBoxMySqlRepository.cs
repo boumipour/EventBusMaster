@@ -1,7 +1,7 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
-using MrEventBus.Boxing.MySql.Infrastructure;
+using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
 namespace MrEventBus.Box.MySql.InBox

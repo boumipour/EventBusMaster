@@ -1,6 +1,6 @@
 using EventBus;
 using MrEventBus.Abstraction.Subscriber;
-using MrEventBus.Boxing.MySql;
+using MrEventBus.Box.MySql;
 using MrEventBus.RabbitMQ.Configurations;
 using TestApp;
 
@@ -34,7 +34,7 @@ builder.Services.AddMrEventBus(option =>
         QueueName="main"
     }};
 })
-.AddMySqlOutBoxing(option => 
+.AddMySqlOutBoxing(option =>
 {
     option.EnabledProcessor = false;
     option.Concurrency = 10;

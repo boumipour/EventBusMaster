@@ -9,7 +9,7 @@ using MrEventBus.Abstraction.Subscriber.Inbox.Worker;
 using MrEventBus.Box.MySql.InBox;
 using MrEventBus.Box.MySql.Infrastructure;
 using MrEventBus.Box.MySql.OutBox;
-using MrEventBus.Boxing.MySql.Utilities;
+using MrEventBus.Box.MySql.Utilities;
 
 namespace MrEventBus.Box.MySql;
 

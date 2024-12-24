@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MrEventBus.Abstraction", "M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MrEventBus.RabbitMQ", "MrEventBus.RabbitMQ\MrEventBus.RabbitMQ.csproj", "{65D06DAC-DF0A-4FC2-9B5C-D6B32E2A02A2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MrEventBus.Boxing.MySql", "MrEventBus.Outbox.MySql\MrEventBus.Boxing.MySql.csproj", "{594B8010-11D9-496B-B34A-08420367BD4C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MrEventBus.Box.MySql", "MrEventBus.Outbox.MySql\MrEventBus.Box.MySql.csproj", "{594B8010-11D9-496B-B34A-08420367BD4C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
