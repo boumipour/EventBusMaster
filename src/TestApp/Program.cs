@@ -13,7 +13,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddMrEventBus(option => 
+builder.Services.AddMrEventBus(option =>
 {
     option.ExchangeName = "test_app";
     option.HostName = "localhost";
@@ -21,38 +21,38 @@ builder.Services.AddMrEventBus(option =>
     option.VirtualHost = "/";
     option.UserName = "admin";
     option.Password = "admin";
-    
-    option.PoolSizePerQueue = 5;
+
+    option.PoolSizePerQueue = 2;
 
     option.Producers = new[] { typeof(MyEvent) };
     option.Consumers = new[] { new Consumer()
     {
         ConsumerTypes=  new[] { typeof(MyEvent) },
         ExchangeName="test_app",
-        ConcurrencyLevel=100,
-        PrefetchCount=50,
+        ConcurrencyLevel=10,
+        PrefetchCount=10,
         QueueName="main"
     }};
 })
 .AddMySqlOutBoxing(option =>
 {
-    option.EnabledProcessor = false;
-    option.Concurrency = 10;
-    option.ReaderInterval = new TimeSpan(0, 0, 5);
+    option.EnabledProcessor = true;
+    option.Concurrency = 2;
+    option.ReaderInterval = new TimeSpan(0, 0, 1);
     option.EnabledEvents = new[] { typeof(MyEvent) };
 
-    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;";
     option.DBInitializer = false;
 })
 .AddMySqlInBoxing(option =>
 {
-    option.EnabledProcessor = false;
-    option.Concurrency = 10;
-    option.ReaderInterval = new TimeSpan(0, 0, 5);
+    option.EnabledProcessor = true;
+    option.Concurrency = 2;
+    option.ReaderInterval = new TimeSpan(0, 0, 1);
     option.EnabledEvents = new[] { typeof(MyEvent) };
-    
+
     option.DBInitializer = false;
-    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true";
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;";
 });
 
 

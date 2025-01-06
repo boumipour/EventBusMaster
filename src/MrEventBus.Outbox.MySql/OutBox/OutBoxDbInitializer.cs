@@ -67,7 +67,9 @@ public class OutBoxDbInitializer
 		        IN_CreateDateTime,
 		        IN_LastModifyDateTime,
 		        ADDTIME(NOW(), SEC_TO_TIME(-5*60))
-		    );
+		    )
+            ON DUPLICATE KEY UPDATE
+            LastModifyDateTime = VALUES(LastModifyDateTime);
         END";
 
     //todo:fix lockUntil duration and get remain message with state 2
@@ -107,11 +109,13 @@ public class OutBoxDbInitializer
             IN IN_State smallint
         )
         BEGIN
-		     UPDATE OutboxMessages 
-		     SET 
-				State = IN_State,
+            SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+		    
+            UPDATE OutboxMessages 
+		    SET 
+		        State = IN_State,
 				LastModifyDateTime = NOW()
-		     WHERE MessageId = IN_MessageId;
+		    WHERE MessageId = IN_MessageId;
         END";
 
     const string OutBox_Delete_SP_Create = @"

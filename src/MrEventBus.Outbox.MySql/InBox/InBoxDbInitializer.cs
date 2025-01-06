@@ -107,7 +107,9 @@ public class InBoxDbInitializer
 	        IN_CreateDateTime,
 	        IN_LastModifyDateTime,
 	        ADDTIME(NOW(), SEC_TO_TIME(-5*60))
-	    );
+	    )
+        ON DUPLICATE KEY UPDATE
+        LastModifyDateTime = VALUES(LastModifyDateTime);
     END";
 
     const string InBox_Update_SP_Create = @"
@@ -117,6 +119,8 @@ public class InBoxDbInitializer
         IN IN_State smallint
     )
     BEGIN
+        SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
+
 		UPDATE InboxMessages 
 		SET 
 		    State = IN_State,

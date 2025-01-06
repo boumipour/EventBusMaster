@@ -5,6 +5,7 @@ using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Outbox.Config;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
 using MrEventBus.Abstraction.Producer.Strategies;
+using System.Threading;
 
 namespace MrEventBus.Abstraction.Producer.Outbox.Worker
 {
@@ -24,6 +25,7 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
             return Task.Factory.StartNew(async () =>
             {
                 using var scope = _serviceProvider.CreateScope();
+                var semaphore = new SemaphoreSlim(_outboxingConfig.Concurrency);
 
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -34,19 +36,20 @@ namespace MrEventBus.Abstraction.Producer.Outbox.Worker
 
                         var messages = (await repository.GetAsync()).ToList();
 
-
-                        ParallelOptions option = new()
+                        var tasks = messages.Select(async message =>
                         {
-                            CancellationToken = stoppingToken,
-                            MaxDegreeOfParallelism = _outboxingConfig.Concurrency
-                        };
-
-                        Parallel.ForEach(messages, option, async (message) =>
-                        {
+                            await semaphore.WaitAsync(stoppingToken);
+                            try
                             {
                                 await PublishMessageAsync(publisher, repository, message, stoppingToken);
                             }
+                            finally
+                            {
+                                semaphore.Release(); 
+                            }
                         });
+
+                        await Task.WhenAll(tasks);
                     }
                     catch (Exception exception)
                     {
