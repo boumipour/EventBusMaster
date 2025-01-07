@@ -6,6 +6,7 @@ using MrEventBus.Abstraction.Producer.Outbox.Worker;
 using MrEventBus.Abstraction.Subscriber.Inbox.Config;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
 using MrEventBus.Abstraction.Subscriber.Inbox.Worker;
+using MrEventBus.Box.MySql.DatabaseMigrator;
 using MrEventBus.Box.MySql.InBox;
 using MrEventBus.Box.MySql.Infrastructure;
 using MrEventBus.Box.MySql.OutBox;
@@ -37,7 +38,7 @@ public static class Registeration
         services.AddScoped<IOutboxRepository, OutBoxMySqlRepository>();
 
         if (conf.DBInitializer)
-            services.AddScoped<OutBoxDbInitializer>();
+            services.AddScoped<MySqlDbMigrator>();
 
         SqlMapper.AddTypeHandler(new GuidHandler());
 
@@ -76,9 +77,9 @@ public static class Registeration
         services.AddScoped<IInboxRepository, InBoxMySqlRepository>();
 
         if (conf.DBInitializer)
-            services.AddScoped<InBoxDbInitializer>();
+            services.AddScoped<MySqlDbMigrator>();
 
-        SqlMapper.AddTypeHandler(new GuidHandler());
+            SqlMapper.AddTypeHandler(new GuidHandler());
 
         if (conf.EnabledProcessor)
         {

@@ -7,6 +7,57 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="DatabaseScripts\1-OutBox_Insert_SP_Create.sql" />
+    <None Remove="DatabaseScripts\10-InBox_Delete_SP_Create.sql" />
+    <None Remove="DatabaseScripts\2-OutBox_Select_SP_Create.sql" />
+    <None Remove="DatabaseScripts\3-OutBox_Update_SP_Create.sql" />
+    <None Remove="DatabaseScripts\4-OutBox_Delete_SP_Create.sql" />
+    <None Remove="DatabaseScripts\5-InBox_tbl_Create.sql" />
+    <None Remove="DatabaseScripts\6-InBox_Select_SP_Create.sql" />
+    <None Remove="DatabaseScripts\7-InBox_Select_ById_SP_Create.sql" />
+    <None Remove="DatabaseScripts\9-InBox_Update_SP_Create.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="DatabaseScripts\8-InBox_Insert_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="DatabaseScripts\0-OutBox_tbl_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\1-OutBox_Insert_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\10-InBox_Delete_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\2-OutBox_Select_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\3-OutBox_Update_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\4-OutBox_Delete_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\5-InBox_tbl_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\6-InBox_Select_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\7-InBox_Select_ById_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="DatabaseScripts\9-InBox_Update_SP_Create.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 

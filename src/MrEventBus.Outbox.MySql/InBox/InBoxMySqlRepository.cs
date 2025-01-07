@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
+using MrEventBus.Box.MySql.DatabaseMigrator;
 using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
@@ -9,9 +10,9 @@ namespace MrEventBus.Box.MySql.InBox
     public class InBoxMySqlRepository : IInboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
-        private readonly InBoxDbInitializer? _dbInitializer;
+        private readonly MySqlDbMigrator? _dbInitializer;
 
-        public InBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, InBoxDbInitializer? dbInitializer = null)
+        public InBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
             _dbInitializer = dbInitializer;
@@ -21,7 +22,7 @@ namespace MrEventBus.Box.MySql.InBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryFirstAsync<InboxMessage>("InBox_Select_ById", commandType: CommandType.StoredProcedure);
@@ -38,7 +39,7 @@ namespace MrEventBus.Box.MySql.InBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryAsync<InboxMessage>("InBox_Select", commandType: CommandType.StoredProcedure);
@@ -55,7 +56,7 @@ namespace MrEventBus.Box.MySql.InBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -88,7 +89,7 @@ namespace MrEventBus.Box.MySql.InBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -113,7 +114,8 @@ namespace MrEventBus.Box.MySql.InBox
         {
             try
             {
-                await _dbInitializer.InitializeAsync();
+                if (_dbInitializer != null)
+                    await _dbInitializer.MigrateAsync();
 
                 var state = (int)OutboxMessageState.Sended;
 

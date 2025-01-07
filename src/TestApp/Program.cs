@@ -22,37 +22,37 @@ builder.Services.AddMrEventBus(option =>
     option.UserName = "admin";
     option.Password = "admin";
 
-    option.PoolSizePerQueue = 2;
+    option.PoolSizePerQueue = 1;
 
     option.Producers = new[] { typeof(MyEvent) };
     option.Consumers = new[] { new Consumer()
     {
         ConsumerTypes=  new[] { typeof(MyEvent) },
         ExchangeName="test_app",
-        ConcurrencyLevel=10,
-        PrefetchCount=10,
+        ConcurrencyLevel=1,
+        PrefetchCount=1,
         QueueName="main"
     }};
 })
 .AddMySqlOutBoxing(option =>
 {
     option.EnabledProcessor = true;
-    option.Concurrency = 2;
+    option.Concurrency = 1;
     option.ReaderInterval = new TimeSpan(0, 0, 1);
     option.EnabledEvents = new[] { typeof(MyEvent) };
 
-    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;";
-    option.DBInitializer = false;
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true;";
+    option.DBInitializer = true;
 })
 .AddMySqlInBoxing(option =>
 {
     option.EnabledProcessor = true;
-    option.Concurrency = 2;
+    option.Concurrency = 1;
     option.ReaderInterval = new TimeSpan(0, 0, 1);
     option.EnabledEvents = new[] { typeof(MyEvent) };
 
-    option.DBInitializer = false;
-    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;";
+    option.DBInitializer = true;
+    option.MySqlConnectionString = "Server=localhost;User ID=root;Password=root;Database=db;Allow User Variables=true;";
 });
 
 

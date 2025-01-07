@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
+using MrEventBus.Box.MySql.DatabaseMigrator;
 using MrEventBus.Box.MySql.Infrastructure;
 using System.Data;
 
@@ -9,9 +10,9 @@ namespace MrEventBus.Box.MySql.OutBox
     public class OutBoxMySqlRepository : IOutboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
-        private readonly OutBoxDbInitializer? _dbInitializer;
+        private readonly MySqlDbMigrator? _dbInitializer;
 
-        public OutBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, OutBoxDbInitializer? dbInitializer = null)
+        public OutBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
             _dbInitializer = dbInitializer;
@@ -22,7 +23,7 @@ namespace MrEventBus.Box.MySql.OutBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 using var connection = _mySqlConnectionFactory.CreateConnection();
                 return await connection.QueryAsync<OutboxMessage>("OutBox_Select", commandType: CommandType.StoredProcedure);
@@ -39,7 +40,7 @@ namespace MrEventBus.Box.MySql.OutBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -71,7 +72,7 @@ namespace MrEventBus.Box.MySql.OutBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 var param = new Dictionary<string, object>()
                 {
@@ -97,7 +98,7 @@ namespace MrEventBus.Box.MySql.OutBox
             try
             {
                 if (_dbInitializer != null)
-                    await _dbInitializer.InitializeAsync();
+                    await _dbInitializer.MigrateAsync();
 
                 var state = (int)OutboxMessageState.Sended;
 
