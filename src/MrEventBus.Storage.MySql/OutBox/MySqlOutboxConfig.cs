@@ -1,6 +1,6 @@
 ﻿using MrEventBus.Abstraction.Producer.Outbox.Config;
 
-namespace MrEventBus.Box.MySql.OutBox;
+namespace MrEventBus.Storage.MySql.OutBox;
 
 public class MySqlOutboxConfig : OutboxConfig
 {

@@ -1,7 +1,7 @@
 using EventBus;
 using MrEventBus.Abstraction.Subscriber;
-using MrEventBus.Box.MySql;
 using MrEventBus.RabbitMQ.Configurations;
+using MrEventBus.Storage.MySql;
 using TestApp;
 
 var builder = WebApplication.CreateBuilder(args);

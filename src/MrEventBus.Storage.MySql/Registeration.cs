@@ -6,13 +6,13 @@ using MrEventBus.Abstraction.Producer.Outbox.Worker;
 using MrEventBus.Abstraction.Subscriber.Inbox.Config;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
 using MrEventBus.Abstraction.Subscriber.Inbox.Worker;
-using MrEventBus.Box.MySql.DatabaseMigrator;
-using MrEventBus.Box.MySql.InBox;
-using MrEventBus.Box.MySql.Infrastructure;
-using MrEventBus.Box.MySql.OutBox;
-using MrEventBus.Box.MySql.Utilities;
+using MrEventBus.Storage.MySql.DatabaseMigrator;
+using MrEventBus.Storage.MySql.InBox;
+using MrEventBus.Storage.MySql.Infrastructure;
+using MrEventBus.Storage.MySql.OutBox;
+using MrEventBus.Storage.MySql.Utilities;
 
-namespace MrEventBus.Box.MySql;
+namespace MrEventBus.Storage.MySql;
 
 public static class Registeration
 {
@@ -35,7 +35,7 @@ public static class Registeration
 
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
-        services.AddScoped<IOutboxRepository, OutBoxMySqlRepository>();
+        services.AddScoped<IOutboxRepository, MySqlOutBoxRepository>();
 
         if (conf.DBInitializer)
             services.AddScoped<MySqlDbMigrator>();
@@ -74,12 +74,12 @@ public static class Registeration
 
 
         services.AddSingleton<IMySqlConnectionFactory>(new MySqlConnectionFactory(conf.MySqlConnectionString));
-        services.AddScoped<IInboxRepository, InBoxMySqlRepository>();
+        services.AddScoped<IInboxRepository, MySqlInBoxRepository>();
 
         if (conf.DBInitializer)
             services.AddScoped<MySqlDbMigrator>();
 
-            SqlMapper.AddTypeHandler(new GuidHandler());
+        SqlMapper.AddTypeHandler(new GuidHandler());
 
         if (conf.EnabledProcessor)
         {

@@ -1,12 +1,7 @@
 ﻿using MySqlConnector;
 
-namespace MrEventBus.Box.MySql.Infrastructure
+namespace MrEventBus.Storage.MySql.Infrastructure
 {
-    public interface IMySqlConnectionFactory
-    {
-        MySqlConnection CreateConnection();
-    }
-
     public class MySqlConnectionFactory : IMySqlConnectionFactory
     {
         private readonly string _connectionString;
@@ -16,7 +11,7 @@ namespace MrEventBus.Box.MySql.Infrastructure
             _connectionString = connectionString;
         }
 
-        public MySqlConnection CreateConnection()
+        public MySqlConnection GetConnection()
         {
             var connection = new MySqlConnection(_connectionString);
             connection.Open();

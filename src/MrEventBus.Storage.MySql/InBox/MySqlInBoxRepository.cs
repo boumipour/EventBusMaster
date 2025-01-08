@@ -1,18 +1,18 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Subscriber.Inbox.Repository;
-using MrEventBus.Box.MySql.DatabaseMigrator;
-using MrEventBus.Box.MySql.Infrastructure;
+using MrEventBus.Storage.MySql.DatabaseMigrator;
+using MrEventBus.Storage.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Box.MySql.InBox
+namespace MrEventBus.Storage.MySql.InBox
 {
-    public class InBoxMySqlRepository : IInboxRepository
+    public class MySqlInBoxRepository : IInboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
         private readonly MySqlDbMigrator? _dbInitializer;
 
-        public InBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
+        public MySqlInBoxRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
             _dbInitializer = dbInitializer;
@@ -24,7 +24,7 @@ namespace MrEventBus.Box.MySql.InBox
                 if (_dbInitializer != null)
                     await _dbInitializer.MigrateAsync();
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 return await connection.QueryFirstAsync<InboxMessage>("InBox_Select_ById", commandType: CommandType.StoredProcedure);
             }
             catch (Exception exception)
@@ -41,7 +41,7 @@ namespace MrEventBus.Box.MySql.InBox
                 if (_dbInitializer != null)
                     await _dbInitializer.MigrateAsync();
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 return await connection.QueryAsync<InboxMessage>("InBox_Select", commandType: CommandType.StoredProcedure);
             }
             catch (Exception exception)
@@ -73,7 +73,7 @@ namespace MrEventBus.Box.MySql.InBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("InBox_Insert", parameters, commandType: CommandType.StoredProcedure);
 
             }
@@ -99,7 +99,7 @@ namespace MrEventBus.Box.MySql.InBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("InBox_Update", parameters, commandType: CommandType.StoredProcedure);
 
             }
@@ -127,7 +127,7 @@ namespace MrEventBus.Box.MySql.InBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("InBox_Delete", parameters, commandType: CommandType.StoredProcedure);
 
             }

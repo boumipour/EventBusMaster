@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MrEventBus.Outbox.MySql\MrEventBus.Box.MySql.csproj" />
     <ProjectReference Include="..\MrEventBus.RabbitMQ\MrEventBus.RabbitMQ.csproj" />
+    <ProjectReference Include="..\MrEventBus.Storage.MySql\MrEventBus.Storage.MySql.csproj" />
   </ItemGroup>
 
 </Project>

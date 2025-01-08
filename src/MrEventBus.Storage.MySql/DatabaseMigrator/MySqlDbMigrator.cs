@@ -1,10 +1,10 @@
 ﻿using Dapper;
-using MrEventBus.Box.MySql.Infrastructure;
+using MrEventBus.Storage.MySql.Infrastructure;
 using System.Data;
 using System.Text.RegularExpressions;
 
 
-namespace MrEventBus.Box.MySql.DatabaseMigrator
+namespace MrEventBus.Storage.MySql.DatabaseMigrator
 {
     public class MySqlDbMigrator
     {
@@ -26,7 +26,7 @@ namespace MrEventBus.Box.MySql.DatabaseMigrator
 
         private async Task CreateMigrationTableIfNotExistsAsync()
         {
-            var Connection = _mySqlConnectionFactory.CreateConnection();
+            var Connection = _mySqlConnectionFactory.GetConnection();
 
             string query =
                 "SELECT count(*) FROM " +
@@ -69,7 +69,7 @@ namespace MrEventBus.Box.MySql.DatabaseMigrator
 
         private async Task<bool> ShouldBeAppliedAsync(string migrationName)
         {
-            var Connection = _mySqlConnectionFactory.CreateConnection();
+            var Connection = _mySqlConnectionFactory.GetConnection();
 
             var query = $"select count(*) from {MigrationTableName} where MigrationName='{migrationName}'";
             var count = await Connection.ExecuteScalarAsync<int>(query);
@@ -77,7 +77,7 @@ namespace MrEventBus.Box.MySql.DatabaseMigrator
         }
         private async Task NoteAppliedMigrationsAsync(string migrationName)
         {
-            var Connection = _mySqlConnectionFactory.CreateConnection();
+            var Connection = _mySqlConnectionFactory.GetConnection();
 
             var query = $" insert into {MigrationTableName} (MigrationName) values ('{migrationName}')";
             await Connection.ExecuteAsync(query);
@@ -85,27 +85,19 @@ namespace MrEventBus.Box.MySql.DatabaseMigrator
 
         private async Task ApplyChangesAsync(Dictionary<int, string> migrations)
         {
-            try
+            var Connection = _mySqlConnectionFactory.GetConnection();
+
+            foreach (var item in migrations.OrderBy(x => x.Key))
             {
-                var Connection = _mySqlConnectionFactory.CreateConnection();
-
-                foreach (var item in migrations.OrderBy(x => x.Key))
+                if (await ShouldBeAppliedAsync(item.Value))
                 {
-                    if (await ShouldBeAppliedAsync(item.Value))
-                    {
-                        var fileName = $"{item.Key}-{item.Value}.sql";
-                        var migration = await File.ReadAllTextAsync($"{GetMigrationFolderName()}/{fileName}");
-                        await Connection.ExecuteAsync(migration, commandType: CommandType.Text);
-                        await NoteAppliedMigrationsAsync(item.Value);
+                    var fileName = $"{item.Key}-{item.Value}.sql";
+                    var migration = await File.ReadAllTextAsync($"{GetMigrationFolderName()}/{fileName}");
+                    await Connection.ExecuteAsync(migration, commandType: CommandType.Text);
+                    await NoteAppliedMigrationsAsync(item.Value);
 
-                    }
                 }
             }
-            catch (Exception exception)
-            {
-                Console.WriteLine(exception.Message);
-            }
-          
         }
 
         public async ValueTask MigrateAsync()
@@ -114,13 +106,23 @@ namespace MrEventBus.Box.MySql.DatabaseMigrator
 
             lock (_lock)
             {
-                if (_isInitialized) return;
+                if (_isInitialized)
+                    return;
+
                 _isInitialized = true;
             }
 
-            await CreateMigrationTableIfNotExistsAsync();
-            var scripts = EvaluateDbScripts();
-            await ApplyChangesAsync(scripts);
+            try
+            {
+                await CreateMigrationTableIfNotExistsAsync();
+                var scripts = EvaluateDbScripts();
+                await ApplyChangesAsync(scripts);
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+                throw;
+            }
         }
 
     }

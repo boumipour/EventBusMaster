@@ -1,18 +1,18 @@
 ﻿using Dapper;
 using MrEventBus.Abstraction.Models;
 using MrEventBus.Abstraction.Producer.Outbox.Repository;
-using MrEventBus.Box.MySql.DatabaseMigrator;
-using MrEventBus.Box.MySql.Infrastructure;
+using MrEventBus.Storage.MySql.DatabaseMigrator;
+using MrEventBus.Storage.MySql.Infrastructure;
 using System.Data;
 
-namespace MrEventBus.Box.MySql.OutBox
+namespace MrEventBus.Storage.MySql.OutBox
 {
-    public class OutBoxMySqlRepository : IOutboxRepository
+    public class MySqlOutBoxRepository : IOutboxRepository
     {
         private readonly IMySqlConnectionFactory _mySqlConnectionFactory;
         private readonly MySqlDbMigrator? _dbInitializer;
 
-        public OutBoxMySqlRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
+        public MySqlOutBoxRepository(IMySqlConnectionFactory mySqlConnectionFactory, MySqlDbMigrator? dbInitializer = null)
         {
             _mySqlConnectionFactory = mySqlConnectionFactory;
             _dbInitializer = dbInitializer;
@@ -25,7 +25,7 @@ namespace MrEventBus.Box.MySql.OutBox
                 if (_dbInitializer != null)
                     await _dbInitializer.MigrateAsync();
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 return await connection.QueryAsync<OutboxMessage>("OutBox_Select", commandType: CommandType.StoredProcedure);
             }
             catch (Exception exception)
@@ -56,7 +56,7 @@ namespace MrEventBus.Box.MySql.OutBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("OutBox_Insert", parameters, commandType: CommandType.StoredProcedure);
 
             }
@@ -82,7 +82,7 @@ namespace MrEventBus.Box.MySql.OutBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("OutBox_Update", parameters, commandType: CommandType.StoredProcedure);
 
             }
@@ -110,7 +110,7 @@ namespace MrEventBus.Box.MySql.OutBox
                 var parameters = new DynamicParameters();
                 parameters.AddDynamicParams(param);
 
-                using var connection = _mySqlConnectionFactory.CreateConnection();
+                using var connection = _mySqlConnectionFactory.GetConnection();
                 await connection.ExecuteAsync("OutBox_Delete", parameters, commandType: CommandType.StoredProcedure);
 
             }

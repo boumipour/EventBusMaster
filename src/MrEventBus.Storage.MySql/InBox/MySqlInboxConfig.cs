@@ -1,6 +1,6 @@
 ﻿using MrEventBus.Abstraction.Subscriber.Inbox.Config;
 
-namespace MrEventBus.Box.MySql.InBox
+namespace MrEventBus.Storage.MySql.InBox
 {
     public class MySqlInboxConfig : InboxConfig
     {
